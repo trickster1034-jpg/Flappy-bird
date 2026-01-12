@@ -11,17 +11,13 @@
       text-align: center;
       font-family: Arial;
     }
-
     canvas {
       display: block;
       margin: auto;
       background: #70c5ce;
       touch-action: manipulation;
     }
-
-    h2 {
-      margin: 5px;
-    }
+    h2 { margin: 5px; }
   </style>
 </head>
 <body>
@@ -38,13 +34,17 @@
   const gravity = 0.35;
   const jump = -7;
 
+  // NEW: Image Loading
+  const birdImg = new Image();
+  birdImg.src = "bird.png"; 
+
   let pipes = [];
   let frame = 0;
   let score = 0;
   let gameOver = false;
 
-  // TOUCH CONTROL
-  canvas.addEventListener("touchstart", () => {
+  canvas.addEventListener("touchstart", (e) => {
+    e.preventDefault(); // Prevents zooming on double tap
     if (!gameOver) {
       birdVelocity = jump;
     } else {
@@ -53,10 +53,8 @@
   });
 
   function drawBird() {
-    ctx.fillStyle = "yellow";
-    ctx.beginPath();
-    ctx.arc(80, birdY, 12, 0, Math.PI * 2);
-    ctx.fill();
+    // Draws your bird.png image at 40x40 pixels
+    ctx.drawImage(birdImg, 60, birdY - 20, 40, 40);
   }
 
   function drawPipes() {
@@ -69,27 +67,23 @@
 
   function updatePipes() {
     if (frame % 90 === 0) {
-      let gap = 170;
+      let gap = 170; // Slightly larger gap for easier play with image
       let top = Math.random() * 200 + 20;
-      pipes.push({
-        x: canvas.width,
-        top: top,
-        bottom: top + gap
-      });
+      pipes.push({ x: canvas.width, top: top, bottom: top + gap });
     }
 
     pipes.forEach(p => {
       p.x -= 2;
 
-      // Collision
+      // UPDATED COLLISION: Checks the 40x40 area of your image
       if (
-        80 > p.x && 80 < p.x + 50 &&
-        (birdY < p.top || birdY > p.bottom)
+        60 + 35 > p.x && 60 < p.x + 50 &&
+        (birdY - 15 < p.top || birdY + 15 > p.bottom)
       ) {
         gameOver = true;
       }
 
-      if (p.x === 80) score++;
+      if (p.x === 60) score++;
     });
 
     pipes = pipes.filter(p => p.x > -50);
@@ -128,7 +122,10 @@
     }
   }
 
-  gameLoop();
+  // Ensure image is loaded before starting
+  birdImg.onload = () => {
+    gameLoop();
+  };
 </script>
 
 </body>
