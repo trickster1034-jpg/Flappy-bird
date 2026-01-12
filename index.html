@@ -28,7 +28,8 @@
 <script>
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
-
+  const pipeImg = new Image();
+  pipeImg.src = "pipe.png";
   let birdY = 250;
   let birdVelocity = 0;
   const gravity = 0.35;
@@ -58,12 +59,19 @@
   }
 
   function drawPipes() {
-    ctx.fillStyle = "green";
-    pipes.forEach(p => {
-      ctx.fillRect(p.x, 0, 50, p.top);
-      ctx.fillRect(p.x, p.bottom, 50, canvas.height);
-    });
+  pipes.forEach(p => {
+    // This draws your pipe.png for the top
+    ctx.save();
+    ctx.translate(p.x + 25, p.top);
+    ctx.scale(1, -1);
+    ctx.drawImage(pipeImg, -25, 0, 50, p.top);
+    ctx.restore();
+
+    // This draws your pipe.png for the bottom
+    ctx.drawImage(pipeImg, p.x, p.bottom, 50, canvas.height - p.bottom);
+  });
   }
+  
 
   function updatePipes() {
     if (frame % 90 === 0) {
@@ -123,9 +131,14 @@
   }
 
   // Ensure image is loaded before starting
-  birdImg.onload = () => {
-    gameLoop();
-  };
+    let imagesLoaded = 0;
+  function checkLoaded() {
+      imagesLoaded++;
+      if (imagesLoaded === 2) gameLoop(); 
+  }
+  birdImg.onload = checkLoaded;
+  pipeImg.onload = checkLoaded;
+  
 </script>
 
 </body>
