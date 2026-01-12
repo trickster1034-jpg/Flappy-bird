@@ -32,7 +32,7 @@
   pipeImg.src = "pipe.png";
   let birdY = 250;
   let birdVelocity = 0;
-  const gravity = 0.35;
+  const gravity = 0.3;
   const jump = -7;
 
   // NEW: Image Loading
@@ -44,33 +44,83 @@
   let score = 0;
   let gameOver = false;
 
+  let lastClickTime = 0;
+  let clickCount = 0;
+  let fartTimer = 0;
+  
+
   canvas.addEventListener("touchstart", (e) => {
-    e.preventDefault(); // Prevents zooming on double tap
+    e.preventDefault();
+    
     if (!gameOver) {
-      birdVelocity = jump;
+        birdVelocity = jump; //
+
+        let currentTime = new Date().getTime();
+        let timeDiff = currentTime - lastClickTime;
+
+        if (timeDiff < 300) { 
+            clickCount++;
+        } else {
+            clickCount = 1;
+        }
+
+        lastClickTime = currentTime;
+
+        // Trigger fart for double tap or higher
+        if (clickCount >= 2) {
+            fartTimer = 15; 
+        }
     } else {
-      location.reload();
+        location.reload(); //
     }
-  });
+});
+      
+  
 
   function drawBird() {
-    // Draws your bird.png image at 40x40 pixels
-    ctx.drawImage(birdImg, 60, birdY - 20, 40, 40);
+    ctx.save(); //
+    ctx.translate(birdX, birdY); //
+    
+    let rotation = birdVelocity * 0.05; //
+    ctx.rotate(rotation); //
+
+    if (fartTimer > 0) {
+        ctx.font = "40px Arial";
+        
+        if (clickCount >= 5) {
+            // 5-TAP COMBO: Rainbow/Fire Effect
+            ctx.fillText("🔥", -70, 25); 
+        } else {
+            // NORMAL COMBO: Standard Cloud
+            ctx.fillText("💨", -70, 25); 
+        }
+        
+        fartTimer--; 
+    }
+
+    ctx.drawImage(birdImg, -30, -30, 60, 60); //
+    ctx.restore(); //
   }
+  
+  
+  
 
   function drawPipes() {
-  pipes.forEach(p => {
-    // This draws your pipe.png for the top
-    ctx.save();
-    ctx.translate(p.x + 25, p.top);
-    ctx.scale(1, -1);
-    ctx.drawImage(pipeImg, -25, 0, 50, p.top);
-    ctx.restore();
+    pipes.forEach(p => {
+        let pipeWidth = 90; // Increased from 50 to 90 for thickness
 
-    // This draws your pipe.png for the bottom
-    ctx.drawImage(pipeImg, p.x, p.bottom, 50, canvas.height - p.bottom);
-  });
+        // Top Pipe
+        ctx.save();
+        ctx.translate(p.x + (pipeWidth / 2), p.top);
+        ctx.scale(1, -1);
+        ctx.drawImage(pipeImg, -(pipeWidth / 2), 0, pipeWidth, p.top);
+        ctx.restore();
+
+        // Bottom Pipe
+        ctx.drawImage(pipeImg, p.x, p.bottom, pipeWidth, canvas.height - p.bottom);
+    });
   }
+  
   
 
   function updatePipes() {
@@ -83,13 +133,13 @@
     pipes.forEach(p => {
       p.x -= 2;
 
-      // UPDATED COLLISION: Checks the 40x40 area of your image
-      if (
-        60 + 35 > p.x && 60 < p.x + 50 &&
-        (birdY - 15 < p.top || birdY + 15 > p.bottom)
-      ) {
+      // Update '30' for the larger bird and '90' for the thicker pipe
+if (birdX + 25 > p.x && birdX - 25 < p.x + 90) {
+    if (birdY - 25 < p.top || birdY + 25 > p.bottom) {
         gameOver = true;
-      }
+    }
+}
+  
 
       if (p.x === 60) score++;
     });
