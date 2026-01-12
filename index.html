@@ -135,8 +135,8 @@
       p.x -= 2;
 
       // Update '30' for the larger bird and '90' for the thicker pipe
-if (birdX + 25 > p.x && birdX - 25 < p.x + 90) {
-    if (birdY - 25 < p.top || birdY + 25 > p.bottom) {
+if (birdX + 15 > p.x && birdX - 15 < p.x + 90) {
+    if (birdY - 15 < p.top || birdY + 15 > p.bottom) {
         gameOver = true;
     }
 }
