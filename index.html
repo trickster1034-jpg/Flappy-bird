@@ -63,7 +63,7 @@
         if (gamePhase === 1) {
             birdVelocity = jump; 
         } else if (gamePhase === 2 && birdY >= 430) {
-            birdVelocity = -8; 
+            birdVelocity = -10; 
         }
     } else {
         const rect = canvas.getBoundingClientRect();
@@ -76,14 +76,14 @@
   function updatePipes() {
     if (!gameStarted) return; // Don't spawn pipes until start
 
-    let spawnRate = gamePhase === 1 ? 140 : 100;
+    let spawnRate = gamePhase === 1 ? 140 : 110;
     if (frame % spawnRate === 0) {
       if (gamePhase === 1) {
           let gap = 190;
           let topH = Math.random() * (canvas.height / 3) + 60;
           pipes.push({ x: canvas.width, top: topH, bottom: topH + gap, type: 'flappy' });
       } else {
-          let cactusH = 60 + Math.random() * 40;
+          let cactusH = 70 + Math.random() * 50;
           pipes.push({ x: canvas.width, top: 460 - cactusH, bottom: 460, type: 'dino' });
       }
     }
@@ -142,12 +142,12 @@
 
     if (!gameOver && !gameWon) {
       if (gameStarted) {
-          birdVelocity += (gamePhase === 1 ? gravity : 0.4);
+          birdVelocity += (gamePhase === 1 ? gravity : 0.45);
           birdY += birdVelocity;
       }
 
       if (gamePhase === 2) {
-          if (birdY > 430) { birdY = 430; birdVelocity = 0; }
+          if (birdY > 425) { birdY = 425; birdVelocity = 0; }
           ctx.fillStyle = "#555";
           ctx.fillRect(0, 460, canvas.width, 40); 
       } else {
