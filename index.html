@@ -8,15 +8,16 @@
     body { margin: 0; background: #222; text-align: center; font-family: Arial; overflow: hidden; }
     #game-container { position: relative; width: 360px; margin: auto; }
     canvas { display: block; background: #70c5ce; touch-action: manipulation; }
-    /* This is the secret to making the GIF animate! */
     #meme-overlay { 
       position: absolute; 
-      top: 80px; 
+      top: 100px; 
       left: 50%; 
       transform: translateX(-50%); 
-      width: 250px; 
+      width: 260px; 
       display: none; 
       z-index: 10;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
     h2 { margin: 5px; color: white; text-shadow: 1px 1px 2px black; }
   </style>
@@ -44,18 +45,20 @@
   flapSound.preload = "auto";
   let endSound = new Audio();
 
-  // 3. Game Variables
+  // 3. TWEAKED PHYSICS (Easier Control)
   let birdX = 50, birdY = 250, birdVelocity = 0;
-  const gravity = 0.3, jump = -7;
+  const gravity = 0.25; // Slightly lighter gravity
+  const jump = -5.5;    // Reduced jump height (from -7 to -5.5)
+  
+  // 4. Game State
   let pipes = [], frame = 0, score = 0, bgX = 0;
   let gameOver = false, gameWon = false;
-  
-  // 4. Memes
   let endTriggered = false, showScoreboard = false, showSkipButton = false;
+
   const memes = ["meme1.gif", "meme2.gif", "meme3.gif", "meme4.gif", "meme5.gif"];
   const memeSounds = ["sound1.mp3", "sound2.mp3", "sound3.mp3", "sound4.mp3", "sound5.mp3"];
 
-  // 5. Stats
+  // Stats
   let highScore = localStorage.getItem("highScore") || 0;
   let totalDeaths = localStorage.getItem("totalDeaths") || 0;
 
@@ -77,18 +80,21 @@
   });
 
   function updatePipes() {
-    if (frame % 90 === 0) {
-      let gap = 160; 
-      let topHeight = Math.random() * (canvas.height / 2) + 50;
+    if (frame % 100 === 0) { // Slightly more space between pipes
+      let gap = 180; // Larger gap to make it easier
+      let topHeight = Math.random() * (canvas.height / 2.5) + 50;
       pipes.push({ x: canvas.width, top: topHeight, bottom: topHeight + gap });
     }
     pipes.forEach(p => {
-      p.x -= 2;
-      if (birdX + 15 > p.x && birdX - 15 < p.x + 80) {
-          if (birdY - 15 < p.top || birdY + 15 > p.bottom) gameOver = true;
+      p.x -= 1.8; // Slightly slower pipe speed
+      
+      // FLATER HITBOX (Narrower pipes = easier to dodge)
+      if (birdX + 12 > p.x && birdX - 12 < p.x + 60) {
+          if (birdY - 12 < p.top || birdY + 12 > p.bottom) gameOver = true;
       }
-      if (p.x === 60) {
+      if (p.x < 60 && !p.passed) {
           score++;
+          p.passed = true;
           if (score >= 10) gameWon = true; 
       }
     });
@@ -98,8 +104,9 @@
   function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Background
     if (bgImg.complete) {
-        if (!gameOver && !gameWon) bgX -= 0.5;
+        if (!gameOver && !gameWon) bgX -= 0.4;
         if (bgX <= -canvas.width) bgX = 0;
         ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
         ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
@@ -108,65 +115,66 @@
     if (!gameOver && !gameWon) {
       birdVelocity += gravity; birdY += birdVelocity;
       if (birdY > canvas.height || birdY < 0) gameOver = true;
+      
       updatePipes();
+      
+      // DRAW FLATER PIPES
       pipes.forEach(p => {
-          let pipeWidth = 80;
+          let pipeWidth = 60; // Thinner pipes (from 80 to 60)
+          
+          // Top
           ctx.save(); ctx.translate(p.x + pipeWidth/2, p.top); ctx.scale(1, -1);
           ctx.drawImage(pipeImg, -pipeWidth/2, 0, pipeWidth, p.top); ctx.restore(); 
+          
+          // Bottom
           ctx.drawImage(pipeImg, p.x, p.bottom, pipeWidth, canvas.height - p.bottom);
       });
-      ctx.save(); ctx.translate(birdX, birdY); ctx.rotate(birdVelocity * 0.05);
-      ctx.drawImage(birdImg, -30, -30, 60, 60); ctx.restore();
-      ctx.fillStyle = "white"; ctx.font = "bold 22px Arial";
-      ctx.fillText("Score: " + score, 15, 35);
+
+      // Bird
+      ctx.save(); ctx.translate(birdX, birdY); ctx.rotate(birdVelocity * 0.08);
+      ctx.drawImage(birdImg, -25, -25, 50, 50); // Slightly smaller bird for better view
+      ctx.restore();
+
+      ctx.fillStyle = "white"; ctx.font = "bold 24px Arial";
+      ctx.fillText("Score: " + score, 20, 40);
       frame++;
       requestAnimationFrame(gameLoop);
     } 
     else {
+      // END STATE LOGIC
       if (!endTriggered) {
         let waitTime = 4000; 
         if (gameWon) {
-            memeImg.src = "win.gif";
-            endSound.src = "win.mp3";
-            waitTime = 8000; 
+            memeImg.src = "win.gif"; endSound.src = "win.mp3"; waitTime = 8000; 
         } else {
             let randomIndex = Math.floor(Math.random() * memes.length);
-            memeImg.src = memes[randomIndex];
-            endSound.src = memeSounds[randomIndex];
-            totalDeaths++;
-            localStorage.setItem("totalDeaths", totalDeaths);
+            memeImg.src = memes[randomIndex]; endSound.src = memeSounds[randomIndex];
+            totalDeaths++; localStorage.setItem("totalDeaths", totalDeaths);
         }
-        memeImg.style.display = "block"; // Show the real animating GIF
-        if (score > highScore) {
-            highScore = score;
-            localStorage.setItem("highScore", highScore);
-        }
+        memeImg.style.display = "block";
+        if (score > highScore) { highScore = score; localStorage.setItem("highScore", highScore); }
         endSound.play().catch(() => {});
         endTriggered = true;
-        setTimeout(() => { showSkipButton = true; }, 2000);
+        setTimeout(() => { showSkipButton = true; }, 1500); // Skip appears sooner
         setTimeout(() => { showScoreboard = true; }, waitTime); 
       }
 
-      if (showSkipButton && !showScoreboard) {
+      // UI Scoreboard
+      if (showScoreboard) {
+          memeImg.style.display = "none";
+          ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+          ctx.fillRect(40, 100, 280, 300);
+          ctx.fillStyle = "white"; ctx.font = "bold 26px Arial";
+          ctx.fillText(gameWon ? "🏆 YOU WON!" : "GAME OVER", 90, 160);
+          ctx.font = "20px Arial";
+          ctx.fillText("Final Score: " + score, 80, 220);
+          ctx.fillText("High Score: " + highScore, 80, 260);
+          ctx.font = "bold 18px Arial"; ctx.fillText("Tap to Restart", 115, 350);
+      } else if (showSkipButton) {
           ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
           ctx.fillRect(130, 420, 100, 40);
           ctx.fillStyle = "black"; ctx.font = "bold 16px Arial";
           ctx.fillText("SKIP >>", 153, 445);
-      }
-
-      if (showScoreboard) {
-          memeImg.style.display = "none"; // Hide GIF when scoreboard appears
-          ctx.fillStyle = gameWon ? "rgba(255, 215, 0, 0.95)" : "rgba(0, 0, 0, 0.85)";
-          ctx.fillRect(40, 100, 280, 300);
-          ctx.fillStyle = gameWon ? "black" : "white";
-          ctx.font = "bold 26px Arial";
-          ctx.fillText(gameWon ? "🏆 YOU WON! 🏆" : "GAME OVER", 90, 150);
-          ctx.font = "20px Arial";
-          ctx.fillText("Final Score: " + score, 80, 210);
-          ctx.fillText("High Score: " + highScore, 80, 250);
-          ctx.fillText("Total Deaths: " + totalDeaths, 80, 290);
-          ctx.font = "bold 18px Arial";
-          ctx.fillText("Tap to Restart", 115, 360);
       }
       requestAnimationFrame(gameLoop);
     }
