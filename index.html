@@ -44,10 +44,22 @@
   let frame = 0;
   let score = 0;
   let gameOver = false;
-
+  let gameOver = false;
+  let gameWon = false; // Add this line
+  
   let lastClickTime = 0;
   let clickCount = 0;
   let fartTimer = 0;
+  // NEW: Lists for your 5 memes and 5 sounds
+  const memes = ["meme1.gif", "meme2.gif", "meme3.gif", "meme4.gif", "meme5.gif"];
+  const memeSounds = ["sound1.mp3", "sound2.mp3", "sound3.mp3", "sound4.mp3", "sound5.mp3"];
+  let selectedMeme = new Image();
+  let gameOverSound = new Audio();
+  let memeChosen = false;
+    // Load stats from browser memory, or start at 0 if it's the first time
+  let highScore = localStorage.getItem("highScore") || 0;
+  let totalDeaths = localStorage.getItem("totalDeaths") || 0;
+  
   
 
   canvas.addEventListener("touchstart", (e) => {
@@ -142,9 +154,13 @@ if (birdX + 10 > p.x && birdX - 10 < p.x + 90) {
 }
   
 
-      if (p.x === 60) score++;
+            if (p.x === 60) {
+          score++;
+          if (score >= 10) {
+              gameWon = true;
+          }
+        }
     });
-
     pipes = pipes.filter(p => p.x > -50);
   }
 
@@ -157,28 +173,90 @@ if (birdX + 10 > p.x && birdX - 10 < p.x + 90) {
   function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!gameOver) {
-      birdVelocity += gravity;
-      birdY += birdVelocity;
+    if (!gameOver && !gameWon) {
+      // ... (keep all your existing movement and drawing code here)
+      
+      requestAnimationFrame(gameLoop);
+    } else if (gameWon) {
+      // WIN LOGIC
+      if (!memeChosen) {
+        let randomIndex = Math.floor(Math.random() * memes.length);
+        selectedMeme.src = memes[randomIndex];
+        gameOverSound.src = memeSounds[randomIndex];
+        gameOverSound.play();
+        memeChosen = true;
 
-      if (birdY > canvas.height || birdY < 0) {
-        gameOver = true;
+        selectedMeme.onload = () => {
+          ctx.drawImage(selectedMeme, (canvas.width/2) - 100, 50, 200, 200);
+          
+          ctx.fillStyle = "rgba(255, 215, 0, 0.8)"; // Gold background for winning
+          ctx.fillRect(50, 260, 260, 150);
+          
+          ctx.fillStyle = "black";
+          ctx.font = "bold 28px Arial";
+          ctx.fillText("YOU WIN! 🏆", 105, 305);
+          
+          ctx.font = "20px Arial";
+          ctx.fillText("Final Score: " + score, 110, 345);
+          ctx.fillText("Tap to Play Again", 100, 385);
+        };
+      } else {
+      if (!memeChosen) {
+        // 1. Pick and play meme/sound
+        let randomIndex = Math.floor(Math.random() * memes.length);
+        selectedMeme.src = memes[randomIndex];
+        gameOverSound.src = memeSounds[randomIndex];
+        gameOverSound.play();
+        
+        // 2. Update Deaths
+        totalDeaths++;
+        localStorage.setItem("totalDeaths", totalDeaths);
+
+        // 3. Update High Score
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem("highScore", highScore);
+        }
+
+        memeChosen = true;
+
+        selectedMeme.onload = () => {
+          // Draw the meme at the top
+          ctx.drawImage(selectedMeme, (canvas.width/2) - 100, 50, 200, 200);
+          
+          // Draw the Stats Card
+          ctx.fillStyle = "rgba(0, 0, 0, 0.7)"; // Dark transparent box
+          ctx.fillRect(50, 260, 260, 180);
+          
+          ctx.fillStyle = "white";
+          ctx.font = "bold 24px Arial";
+          ctx.fillText("GAME OVER", 110, 295);
+          
+          ctx.font = "20px Arial";
+          ctx.fillText("Score: " + score, 80, 335);
+          ctx.fillText("Highest: " + highScore, 80, 365);
+          ctx.fillText("Total Deaths: " + totalDeaths, 80, 395);
+          
+          ctx.font = "16px Arial";
+          ctx.fillText("Tap to Try Again", 120, 425);
+        };
+      }
+      return; 
+        }
+    
       }
 
-      updatePipes();
-      drawPipes();
-      drawBird();
-      drawScore();
-
-      frame++;
-      requestAnimationFrame(gameLoop);
-    } else {
+      // Draw text over the meme
       ctx.fillStyle = "red";
       ctx.font = "30px Arial";
-      ctx.fillText("GAME OVER", 80, 240);
+      ctx.fillText("GAME OVER", 95, 300);
+      ctx.fillStyle = "white";
       ctx.font = "18px Arial";
-      ctx.fillText("Tap to Restart", 110, 280);
+      ctx.fillText("Tap to Restart", 125, 340);
+      
+      return; // Stops the loop so the GIF stays visible
     }
+    
   }
 
   // Ensure image is loaded before starting
