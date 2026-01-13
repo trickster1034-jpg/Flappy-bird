@@ -24,8 +24,9 @@
   const birdImg = new Image(); birdImg.src = "bird.png"; 
   const bgImg = new Image();   bgImg.src = "bg.png"; 
 
-  // 2. Sounds
-  const flapSound = new Audio("flap.mp3"); // Your 1-sec flap sound
+  // 2. Audio with Instant-Response Logic
+  const flapSound = new Audio("flap.mp3");
+  flapSound.preload = "auto"; // Pre-load into memory
   let endSound = new Audio();
 
   // 3. Game Variables
@@ -45,15 +46,18 @@
   let highScore = localStorage.getItem("highScore") || 0;
   let totalDeaths = localStorage.getItem("totalDeaths") || 0;
 
+  // INPUT HANDLER
   canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
     const touchY = e.touches[0].clientY - rect.top;
 
     if (!gameOver && !gameWon) {
-        // --- FLAP SOUND LOGIC ---
-        flapSound.currentTime = 0; // Rewind to start
-        flapSound.play().catch(() => {}); // Play sound
+        // --- INSTANT AUDIO TRIGGER ---
+        // This stops the previous play and restarts immediately
+        flapSound.pause();
+        flapSound.currentTime = 0; 
+        flapSound.play().catch(err => console.log("Audio waiting for user interaction"));
 
         birdVelocity = jump; 
         let currentTime = Date.now();
