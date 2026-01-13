@@ -7,6 +7,7 @@
   <style>
     body { margin: 0; background: skyblue; text-align: center; font-family: Arial; overflow: hidden; }
     canvas { display: block; margin: auto; background: #70c5ce; touch-action: manipulation; }
+    h2 { margin: 5px; color: white; text-shadow: 1px 1px 2px black; }
   </style>
 </head>
 <body>
@@ -18,28 +19,37 @@
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
   
+  // Assets
   const pipeImg = new Image(); pipeImg.src = "pipe.png";
   const birdImg = new Image(); birdImg.src = "bird.png"; 
 
+  // Game State
   let birdX = 50, birdY = 250, birdVelocity = 0;
   const gravity = 0.3, jump = -7;
   let pipes = [], frame = 0, score = 0;
   let gameOver = false, gameWon = false;
   
+  // Combo/Effects
   let lastClickTime = 0, clickCount = 0, fartTimer = 0;
 
+  // Meme & Sound Assets
   const memes = ["meme1.gif", "meme2.gif", "meme3.gif", "meme4.gif", "meme5.gif"];
   const memeSounds = ["sound1.mp3", "sound2.mp3", "sound3.mp3", "sound4.mp3", "sound5.mp3"];
   let selectedMeme = new Image();
-  let gameOverSound = new Audio();
-  let memeChosen = false;
-  let showScoreboard = false; // New variable to delay the score
+  let endSound = new Audio();
+  let endTriggered = false; 
+  let showScoreboard = false; 
+  let showSkipButton = false; // New: Skip trigger
 
+  // Stats
   let highScore = localStorage.getItem("highScore") || 0;
   let totalDeaths = localStorage.getItem("totalDeaths") || 0;
 
   canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
+    const touchY = e.touches[0].clientY - canvas.getBoundingClientRect().top;
+    const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+
     if (!gameOver && !gameWon) {
         birdVelocity = jump; 
         let currentTime = Date.now();
@@ -48,8 +58,13 @@
         lastClickTime = currentTime;
         if (clickCount >= 2) fartTimer = 15; 
     } else {
-        // Only allow reload if the score is showing or if you won
-        if (showScoreboard || gameWon) location.reload(); 
+        // SKIP LOGIC: If skip is visible and you tap it (Bottom of screen)
+        if (showSkipButton && !showScoreboard && touchY > 400) {
+            showScoreboard = true;
+            return;
+        }
+        // RESTART LOGIC
+        if (showScoreboard) location.reload(); 
     }
   });
 
@@ -82,11 +97,10 @@
 
       updatePipes();
       pipes.forEach(p => {
-          ctx.drawImage(pipeImg, p.x, 0, 90, p.top); // Top (simplified)
-          ctx.drawImage(pipeImg, p.x, p.bottom, 90, canvas.height - p.bottom); // Bottom
+          ctx.drawImage(pipeImg, p.x, 0, 90, p.top);
+          ctx.drawImage(pipeImg, p.x, p.bottom, 90, canvas.height - p.bottom);
       });
 
-      // Draw Bird
       ctx.save();
       ctx.translate(birdX, birdY);
       ctx.rotate(birdVelocity * 0.05);
@@ -98,66 +112,79 @@
       ctx.drawImage(birdImg, -30, -30, 60, 60);
       ctx.restore();
 
-      ctx.fillStyle = "white"; ctx.font = "20px Arial";
+      ctx.fillStyle = "white"; ctx.font = "bold 20px Arial";
       ctx.fillText("Score: " + score, 10, 30);
       frame++;
       requestAnimationFrame(gameLoop);
     } 
-    else if (gameWon) {
-      // WIN LOGIC: NO MEME, JUST VICTORY
-      ctx.fillStyle = "rgba(255, 215, 0, 0.9)";
-      ctx.fillRect(40, 150, 280, 200);
-      ctx.fillStyle = "black";
-      ctx.font = "bold 30px Arial";
-      ctx.fillText("🏆 YOU WON! 🏆", 75, 210);
-      ctx.font = "20px Arial";
-      ctx.fillText("Final Score: " + score, 110, 260);
-      ctx.fillText("Tap to Play Again", 100, 310);
-    } 
     else {
-      // LOSS LOGIC: SHOW MEME THEN SCORE
-      if (!memeChosen) {
-        let randomIndex = Math.floor(Math.random() * memes.length);
-        selectedMeme.src = memes[randomIndex];
-        gameOverSound.src = memeSounds[randomIndex];
-        gameOverSound.play();
-        
-        totalDeaths++;
-        localStorage.setItem("totalDeaths", totalDeaths);
+      // --- END SCREEN LOGIC ---
+      if (!endTriggered) {
+        let waitTime = 4000; 
+
+        if (gameWon) {
+            selectedMeme.src = "win.gif";
+            endSound.src = "win.mp3";
+            waitTime = 8000; 
+        } else {
+            let randomIndex = Math.floor(Math.random() * memes.length);
+            selectedMeme.src = memes[randomIndex];
+            endSound.src = memeSounds[randomIndex];
+            totalDeaths++;
+            localStorage.setItem("totalDeaths", totalDeaths);
+        }
+
         if (score > highScore) {
             highScore = score;
             localStorage.setItem("highScore", highScore);
         }
-        
-        memeChosen = true;
 
-        // THE TIMER: Wait 4 seconds before showing the score
-        setTimeout(() => {
-          showScoreboard = true;
-        }, 4000); 
+        endSound.play();
+        endTriggered = true;
+
+        // Timer for the Skip Button (Appear after 2s)
+        setTimeout(() => { showSkipButton = true; }, 2000);
+
+        // Timer for Automatic Scoreboard
+        setTimeout(() => { showScoreboard = true; }, waitTime); 
       }
 
-      // Draw the Meme while waiting
-      ctx.drawImage(selectedMeme, (canvas.width/2) - 125, 100, 250, 250);
+      // Draw the Meme
+      ctx.drawImage(selectedMeme, (canvas.width/2) - 125, 80, 250, 250);
+
+      // Draw Skip Button (if timer reached and scoreboard not yet shown)
+      if (showSkipButton && !showScoreboard) {
+          ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+          ctx.fillRect(130, 420, 100, 40);
+          ctx.fillStyle = "black";
+          ctx.font = "16px Arial";
+          ctx.fillText("SKIP >>", 155, 445);
+      }
 
       if (showScoreboard) {
-          // Draw the scoreboard overlay after 4 seconds
-          ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+          ctx.fillStyle = gameWon ? "rgba(255, 215, 0, 0.95)" : "rgba(0, 0, 0, 0.85)";
           ctx.fillRect(40, 100, 280, 300);
-          ctx.fillStyle = "white";
-          ctx.font = "bold 24px Arial";
-          ctx.fillText("GAME OVER", 110, 150);
+          
+          ctx.fillStyle = gameWon ? "black" : "white";
+          ctx.font = "bold 26px Arial";
+          ctx.fillText(gameWon ? "🏆 YOU WON! 🏆" : "GAME OVER", 90, 150);
+          
           ctx.font = "20px Arial";
-          ctx.fillText("Score: " + score, 80, 200);
-          ctx.fillText("Highest: " + highScore, 80, 240);
-          ctx.fillText("Total Deaths: " + totalDeaths, 80, 280);
+          ctx.fillText("Final Score: " + score, 80, 210);
+          ctx.fillText("High Score: " + highScore, 80, 250);
+          ctx.fillText("Total Deaths: " + totalDeaths, 80, 290);
+          
+          ctx.font = "bold 18px Arial";
           ctx.fillText("Tap to Restart", 115, 360);
       }
+      
       requestAnimationFrame(gameLoop);
     }
   }
 
-  birdImg.onload = pipeImg.onload = () => { if(birdImg.complete && pipeImg.complete) gameLoop(); };
+  birdImg.onload = pipeImg.onload = () => { 
+    if(birdImg.complete && pipeImg.complete) gameLoop(); 
+  };
 </script>
 </body>
 </html>
