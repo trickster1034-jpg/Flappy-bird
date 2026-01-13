@@ -26,7 +26,6 @@
   const ctx = canvas.getContext("2d");
   const memeImg = document.getElementById("meme-overlay");
 
-  // Assets with Fallback Check
   const pipeImg = new Image(); pipeImg.src = "pipe.png";
   const birdImg = new Image(); birdImg.src = "bird.png";
   const bgImg = new Image();   bgImg.src = "bg.png";
@@ -34,35 +33,39 @@
   const flapSound = new Audio("flap.mp3");
   let endSound = new Audio();
 
-  // Game State
   let birdX = 50, birdY = 250, birdV = 0;
   let score = 0, frame = 0, bgX = 0;
   let pipes = [], gameStarted = false, gameOver = false, gameWon = false;
-  let gamePhase = 1, showScoreboard = false, endTriggered = false;
+  let gamePhase = 1, showScoreboard = false, endTriggered = false, showSkip = false;
   
-  // Stats & Effects
   let highScore = localStorage.getItem("highScore") || 0;
   let deaths = localStorage.getItem("totalDeaths") || 0;
   let lastTap = 0, tapCount = 0, effectT = 0;
 
-  // Input
   function doTap() {
     if (gameOver || gameWon) {
-      if (endTriggered) location.reload();
+      // If scoreboard is showing, click to restart
+      if (showScoreboard) {
+          location.reload();
+      } 
+      // If meme is playing but skip is ready, click to show scoreboard
+      else if (showSkip) {
+          showScoreboard = true;
+      }
       return;
     }
+    
     if (!gameStarted) { gameStarted = true; return; }
 
     flapSound.currentTime = 0; flapSound.play().catch(()=>{});
     
-    // Tap count for fart/fire
     let now = Date.now();
     if (now - lastTap < 300) tapCount++; else tapCount = 1;
     lastTap = now;
     if (tapCount >= 2) effectT = 15;
 
     if (gamePhase === 1) birdV = -5;
-    else if (birdY >= 420) birdV = -12; // Dino High Jump
+    else if (birdY >= 420) birdV = -12;
   }
 
   window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
@@ -71,9 +74,8 @@
   function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Background
     if (bgImg.complete && bgImg.width > 0) {
-      if (gameStarted && !gameOver) bgX -= (gamePhase === 1 ? 0.5 : 1.5);
+      if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.5 : 1.5);
       if (bgX <= -360) bgX = 0;
       ctx.drawImage(bgImg, bgX, 0, 360, 500);
       ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
@@ -85,7 +87,6 @@
       ctx.fillText("TAP TO START", 180, 250); ctx.textAlign="left";
       birdY = 250 + Math.sin(Date.now()/200)*10;
     } else if (!gameOver && !gameWon) {
-      // 2. Physics
       birdV += (gamePhase === 1 ? 0.22 : 0.48);
       birdY += birdV;
 
@@ -93,10 +94,9 @@
         if (birdY > 500 || birdY < 0) gameOver = true;
       } else {
         if (birdY > 425) { birdY = 425; birdV = 0; }
-        ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40); // Ground
+        ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40);
       }
 
-      // 3. Pipes
       let spawn = (gamePhase === 1) ? 140 : 115;
       if (frame % spawn === 0) {
         if (gamePhase === 1) {
@@ -110,14 +110,11 @@
 
       pipes.forEach(p => {
         p.x -= (gamePhase === 1 ? 1.8 : 2.8);
-        
-        // Hitbox
-        if (birdX + 15 > p.x + 15 && birdX - 15 < p.x + 65) {
+        if (birdX + 15 > p.x + 18 && birdX - 15 < p.x + 62) {
           if (p.type === 'f') {
             if (birdY - 12 < p.top || birdY + 12 > p.bot) gameOver = true;
           } else if (birdY + 15 > p.top + 10) gameOver = true;
         }
-
         if (p.x < birdX && !p.p) {
           score++; p.p = true;
           if (score === 10) { gamePhase = 2; pipes = []; birdY = 425; }
@@ -128,7 +125,6 @@
       frame++;
     }
 
-    // 4. Draw Pipes
     pipes.forEach(p => {
       if (pipeImg.complete && pipeImg.width > 0) {
         if (p.type === 'f') {
@@ -143,52 +139,62 @@
       }
     });
 
-    // 5. Draw Bird
     ctx.save(); ctx.translate(birdX, birdY);
     if (gamePhase === 1) ctx.rotate(birdV * 0.1);
-    
     if (effectT > 0) {
       ctx.font = "30px Arial"; ctx.fillText(tapCount >= 4 ? "🔥" : "💨", -50, 10);
       effectT--;
     }
-
     if (birdImg.complete && birdImg.width > 0) ctx.drawImage(birdImg, -25, -25, 50, 50);
     else { ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); }
     ctx.restore();
 
     ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.fillText("Score: "+score, 20, 40);
 
-    if (gameOver || gameWon) drawEnd();
+    if (gameOver || gameWon) runEndSequence();
 
     requestAnimationFrame(loop);
   }
 
-  function drawEnd() {
+  function runEndSequence() {
     if (!endTriggered) {
+      endTriggered = true;
       let win = score >= 20;
-      let memes = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
-      let mSounds = ["sound1.mp3","sound2.mp3","sound3.mp3","sound4.mp3","sound5.mp3"];
+      let m = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
+      let s = ["sound1.mp3","sound2.mp3","sound3.mp3","sound4.mp3","sound5.mp3"];
       let r = Math.floor(Math.random()*5);
       
-      memeImg.src = win ? "win.gif" : memes[r];
+      memeImg.src = win ? "win.gif" : m[r];
       memeImg.style.display = "block";
-      endSound.src = win ? "win.mp3" : mSounds[r];
+      endSound.src = win ? "win.mp3" : s[r];
       endSound.load(); endSound.play().catch(()=>{});
       
       deaths++; localStorage.setItem("totalDeaths", deaths);
       if (score > highScore) { highScore = score; localStorage.setItem("highScore", highScore); }
-      endTriggered = true;
+      
+      // Show skip button after 1.5 seconds
+      setTimeout(() => { showSkip = true; }, 1500);
+      // Auto-show scoreboard after 5 seconds if they don't skip
+      setTimeout(() => { showScoreboard = true; }, 5000);
     }
     
-    ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(40,100,280,300);
-    ctx.fillStyle = "white"; ctx.textAlign="center";
-    ctx.font = "bold 24px Arial"; ctx.fillText(score>=20?"WINNER!":"GAME OVER", 180, 150);
-    ctx.font = "18px Arial"; 
-    ctx.fillText("Score: "+score, 180, 200);
-    ctx.fillText("High Score: "+highScore, 180, 240);
-    ctx.fillText("Deaths: "+deaths, 180, 280);
-    ctx.fillStyle = "#70c5ce"; ctx.fillText("Tap to Restart", 180, 360);
-    ctx.textAlign="left";
+    if (showScoreboard) {
+      memeImg.style.display = "none";
+      ctx.fillStyle = "rgba(0,0,0,0.9)"; ctx.fillRect(40,100,280,300);
+      ctx.fillStyle = "white"; ctx.textAlign="center";
+      ctx.font = "bold 24px Arial"; ctx.fillText(score>=20?"WINNER!":"GAME OVER", 180, 150);
+      ctx.font = "18px Arial"; 
+      ctx.fillText("Score: "+score, 180, 200);
+      ctx.fillText("High Score: "+highScore, 180, 240);
+      ctx.fillText("Deaths: "+deaths, 180, 280);
+      ctx.fillStyle = "#70c5ce"; ctx.fillText("Tap to Restart", 180, 360);
+      ctx.textAlign="left";
+    } else if (showSkip) {
+      // Draw Skip Button Visual
+      ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(130, 430, 100, 35);
+      ctx.fillStyle = "black"; ctx.font = "bold 14px Arial"; ctx.textAlign="center";
+      ctx.fillText("SKIP >>", 180, 453); ctx.textAlign="left";
+    }
   }
 
   loop();
