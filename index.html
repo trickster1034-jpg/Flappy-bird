@@ -8,7 +8,10 @@
     body { margin: 0; background: #222; text-align: center; font-family: Arial; overflow: hidden; }
     #game-container { position: relative; width: 360px; margin: auto; }
     canvas { display: block; background: #70c5ce; touch-action: manipulation; }
-    #meme-overlay { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 260px; display: none; z-index: 10; border-radius: 10px; }
+    #meme-overlay { 
+      position: absolute; top: 100px; left: 50%; transform: translateX(-50%); 
+      width: 260px; display: none; z-index: 10; border-radius: 10px; 
+    }
     h2 { margin: 5px; color: white; text-shadow: 1px 1px 2px black; }
   </style>
 </head>
@@ -26,15 +29,17 @@
   const memeImg = document.getElementById("meme-overlay");
   const statusTxt = document.getElementById("status");
   
+  // Assets
   const pipeImg = new Image(); pipeImg.src = "pipe.png";
   const birdImg = new Image(); birdImg.src = "bird.png"; 
   const bgImg = new Image();   bgImg.src = "bg.png"; 
 
+  // Audio
   const flapSound = new Audio("flap.mp3");
   flapSound.preload = "auto";
   let endSound = new Audio();
 
-  // Variables
+  // Game Variables
   let birdX = 50, birdY = 250, birdVelocity = 0;
   let gravity = 0.22, jump = -5.0;
   let pipes = [], frame = 0, score = 0, bgX = 0;
@@ -57,6 +62,7 @@
     if (!gameOver && !gameWon) {
         flapSound.pause(); flapSound.currentTime = 0; flapSound.play().catch(()=>{});
         
+        // Fart/Fire tap detection
         let currentTime = Date.now();
         if (currentTime - lastClickTime < 300) clickCount++;
         else clickCount = 1;
@@ -66,7 +72,8 @@
         if (gamePhase === 1) {
             birdVelocity = jump; 
         } else if (gamePhase === 2) {
-            if (birdY >= 420) birdVelocity = -12; // INCREASED JUMP FOR DINO
+            // High Jump Logic
+            if (birdY >= 420) birdVelocity = -12; 
         }
     } else {
         const rect = canvas.getBoundingClientRect();
@@ -78,140 +85,24 @@
 
   function updatePipes() {
     if (!gameStarted) return;
-    let spawnRate = gamePhase === 1 ? 140 : 110;
+    let spawnRate = gamePhase === 1 ? 140 : 115;
     if (frame % spawnRate === 0) {
       if (gamePhase === 1) {
           let gap = 190, topH = Math.random() * (canvas.height / 3) + 60;
           pipes.push({ x: canvas.width, top: topH, bottom: topH + gap, type: 'flappy', passed: false });
       } else {
-          let cactusH = 75 + Math.random() * 50; 
+          let cactusH = 75 + Math.random() * 55; 
           pipes.push({ x: canvas.width, top: 460 - cactusH, bottom: 460, type: 'dino', passed: false });
       }
     }
 
     pipes.forEach(p => {
-      p.x -= (gamePhase === 1 ? 1.7 : 2.6);
+      p.x -= (gamePhase === 1 ? 1.7 : 2.7);
       let pW = 80;
-      if (birdX + 15 > p.x && birdX - 15 < p.x + pW) {
-          if (p.type === 'flappy') {
-              if (birdY - 15 < p.top || birdY + 15 > p.bottom) gameOver = true;
-          } else {
-              if (birdY + 20 > p.top) gameOver = true;
-          }
-      }
-      if (p.x + 40 < birdX && !p.passed) {
-          score++; p.passed = true;
-          if (score === 10) {
-              gamePhase = 2; statusTxt.innerText = "Phase 2: RUN! 🦖";
-              statusTxt.style.color = "#ff4500"; pipes = []; birdY = 425;
-          }
-          if (score >= 20) gameWon = true;
-      }
-    });
-    pipes = pipes.filter(p => p.x > -150);
-  }
 
-  function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // --- FORGIVING HITBOX LOGIC ---
+      let bP = 10; // Bird Padding
+      let cP = 18; // Cactus/Pipe Padding (increased to make it easier)
 
-    if (bgImg.complete) {
-        if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.4 : 1.5);
-        if (bgX <= -canvas.width) bgX = 0;
-        ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
-        ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
-    }
-
-    if (!gameStarted) {
-        ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0,0, canvas.width, canvas.height);
-        ctx.fillStyle = "white"; ctx.font = "bold 30px Arial"; ctx.fillText("READY?", 120, 220);
-        ctx.font = "18px Arial"; ctx.fillText("TAP TO START", 115, 260);
-        birdY = 250 + Math.sin(Date.now() / 200) * 10;
-    }
-
-    if (!gameOver && !gameWon) {
-      if (gameStarted) {
-          birdVelocity += (gamePhase === 1 ? gravity : 0.45);
-          birdY += birdVelocity;
-      }
-
-      if (gamePhase === 2) {
-          if (birdY > 425) { birdY = 425; birdVelocity = 0; }
-          ctx.fillStyle = "#333"; ctx.fillRect(0, 460, canvas.width, 40); 
-      } else if (birdY > canvas.height || birdY < 0) gameOver = true;
-
-      updatePipes();
-      
-      pipes.forEach(p => {
-          let pW = 80;
-          if (p.type === 'flappy') {
-              ctx.save(); ctx.translate(p.x + pW/2, p.top); ctx.scale(1, -1);
-              ctx.drawImage(pipeImg, -pW/2, 0, pW, p.top); ctx.restore(); 
-              ctx.drawImage(pipeImg, p.x, p.bottom, pW, canvas.height - p.bottom);
-          } else ctx.drawImage(pipeImg, p.x, p.top, pW, 460 - p.top);
-      });
-
-      ctx.save(); ctx.translate(birdX, birdY);
-      if (gamePhase === 1) ctx.rotate(birdVelocity * 0.08);
-      if (effectTimer > 0) {
-          ctx.font = "40px Arial";
-          ctx.fillText(clickCount >= 4 ? "🔥" : "💨", -60, 20);
-          effectTimer--;
-      }
-      ctx.drawImage(birdImg, -25, -25, 50, 50); 
-      ctx.restore();
-
-      ctx.fillStyle = "white"; ctx.font = "bold 24px Arial";
-      ctx.fillText("Score: " + score, 20, 40);
-      if (gameStarted) frame++;
-      requestAnimationFrame(gameLoop);
-    } 
-    else {
-      if (!endTriggered) {
-        let isWin = score >= 20;
-        let randomIndex = Math.floor(Math.random() * memes.length);
-        memeImg.src = isWin ? "win.gif" : memes[randomIndex];
-        endSound.src = isWin ? "win.mp3" : memeSounds[randomIndex];
-        memeImg.style.display = "block";
-        
-        // --- FIXED STATS LOGIC ---
-        totalDeaths++;
-        localStorage.setItem("totalDeaths", totalDeaths);
-        if (score > highScore) {
-            highScore = score;
-            localStorage.setItem("highScore", highScore);
-        }
-
-        endSound.load();
-        endSound.play().catch(() => {});
-        endTriggered = true;
-        setTimeout(() => { showSkipButton = true; }, 1500); 
-        setTimeout(() => { showScoreboard = true; }, isWin ? 8000 : 4000); 
-      }
-      
-      if (showScoreboard) {
-          memeImg.style.display = "none";
-          ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; ctx.fillRect(40, 80, 280, 340);
-          ctx.fillStyle = "white"; ctx.font = "bold 26px Arial";
-          ctx.fillText(score >= 20 ? "🏆 ULTIMATE WIN!" : "GAME OVER", 80, 130);
+      if (birdX + (25 - bP) > p.x +
           
-          ctx.font = "20px Arial";
-          ctx.fillText("Final Score: " + score, 80, 180);
-          ctx.fillText("High Score: " + highScore, 80, 220);
-          ctx.fillText("Total Deaths: " + totalDeaths, 80, 260);
-          
-          ctx.fillStyle = "#70c5ce"; ctx.font = "bold 18px Arial";
-          ctx.fillText("Tap to Restart", 115, 360);
-      } else if (showSkipButton) {
-          ctx.fillStyle = "rgba(255, 255, 255, 0.7)"; ctx.fillRect(130, 420, 100, 40);
-          ctx.fillStyle = "black"; ctx.font = "bold 16px Arial"; ctx.fillText("SKIP >>", 153, 445);
-      }
-      requestAnimationFrame(gameLoop);
-    }
-  }
-
-  let loaded = 0;
-  function checkReady() { if(++loaded >= 3) gameLoop(); }
-  birdImg.onload = pipeImg.onload = bgImg.onload = checkReady;
-</script>
-</body>
-</html>
