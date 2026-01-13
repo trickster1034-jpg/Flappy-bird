@@ -19,36 +19,37 @@
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
   
-  // Assets
+  // 1. Assets
   const pipeImg = new Image(); pipeImg.src = "pipe.png";
   const birdImg = new Image(); birdImg.src = "bird.png"; 
 
-  // Game State
+  // 2. Game State
   let birdX = 50, birdY = 250, birdVelocity = 0;
   const gravity = 0.3, jump = -7;
   let pipes = [], frame = 0, score = 0;
   let gameOver = false, gameWon = false;
   
-  // Combo/Effects
+  // 3. Effects
   let lastClickTime = 0, clickCount = 0, fartTimer = 0;
 
-  // Meme & Sound Assets
+  // 4. Meme & Sound Assets
   const memes = ["meme1.gif", "meme2.gif", "meme3.gif", "meme4.gif", "meme5.gif"];
   const memeSounds = ["sound1.mp3", "sound2.mp3", "sound3.mp3", "sound4.mp3", "sound5.mp3"];
   let selectedMeme = new Image();
   let endSound = new Audio();
   let endTriggered = false; 
   let showScoreboard = false; 
-  let showSkipButton = false; // New: Skip trigger
+  let showSkipButton = false;
 
-  // Stats
+  // 5. Stats
   let highScore = localStorage.getItem("highScore") || 0;
   let totalDeaths = localStorage.getItem("totalDeaths") || 0;
 
   canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
-    const touchY = e.touches[0].clientY - canvas.getBoundingClientRect().top;
-    const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+    const rect = canvas.getBoundingClientRect();
+    const touchX = e.touches[0].clientX - rect.left;
+    const touchY = e.touches[0].clientY - rect.top;
 
     if (!gameOver && !gameWon) {
         birdVelocity = jump; 
@@ -58,12 +59,12 @@
         lastClickTime = currentTime;
         if (clickCount >= 2) fartTimer = 15; 
     } else {
-        // SKIP LOGIC: If skip is visible and you tap it (Bottom of screen)
+        // Skip Logic: Click in the bottom area (y > 400)
         if (showSkipButton && !showScoreboard && touchY > 400) {
             showScoreboard = true;
             return;
         }
-        // RESTART LOGIC
+        // Reload Logic: Only works if scoreboard is visible
         if (showScoreboard) location.reload(); 
     }
   });
@@ -88,6 +89,7 @@
   }
 
   function gameLoop() {
+    // ALWAYS clear the canvas at the start of every frame
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!gameOver && !gameWon) {
@@ -142,42 +144,36 @@
         endSound.play();
         endTriggered = true;
 
-        // Timer for the Skip Button (Appear after 2s)
         setTimeout(() => { showSkipButton = true; }, 2000);
-
-        // Timer for Automatic Scoreboard
         setTimeout(() => { showScoreboard = true; }, waitTime); 
       }
 
-      // Draw the Meme
+      // DRAW THE MEME - Redrawing this every frame allows the GIF to cycle its frames
       ctx.drawImage(selectedMeme, (canvas.width/2) - 125, 80, 250, 250);
 
-      // Draw Skip Button (if timer reached and scoreboard not yet shown)
       if (showSkipButton && !showScoreboard) {
-          ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+          ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
           ctx.fillRect(130, 420, 100, 40);
           ctx.fillStyle = "black";
-          ctx.font = "16px Arial";
-          ctx.fillText("SKIP >>", 155, 445);
+          ctx.font = "bold 16px Arial";
+          ctx.fillText("SKIP >>", 153, 445);
       }
 
       if (showScoreboard) {
           ctx.fillStyle = gameWon ? "rgba(255, 215, 0, 0.95)" : "rgba(0, 0, 0, 0.85)";
           ctx.fillRect(40, 100, 280, 300);
-          
           ctx.fillStyle = gameWon ? "black" : "white";
           ctx.font = "bold 26px Arial";
           ctx.fillText(gameWon ? "🏆 YOU WON! 🏆" : "GAME OVER", 90, 150);
-          
           ctx.font = "20px Arial";
           ctx.fillText("Final Score: " + score, 80, 210);
           ctx.fillText("High Score: " + highScore, 80, 250);
           ctx.fillText("Total Deaths: " + totalDeaths, 80, 290);
-          
           ctx.font = "bold 18px Arial";
           ctx.fillText("Tap to Restart", 115, 360);
       }
       
+      // Continue the loop so the GIF animates
       requestAnimationFrame(gameLoop);
     }
   }
