@@ -22,33 +22,39 @@
   // 1. Assets
   const pipeImg = new Image(); pipeImg.src = "pipe.png";
   const birdImg = new Image(); birdImg.src = "bird.png"; 
-  const bgImg = new Image();   bgImg.src = "bg.png"; // Load your background here
+  const bgImg = new Image();   bgImg.src = "bg.png"; 
 
-  // 2. Game Variables
+  // 2. Sounds
+  const flapSound = new Audio("flap.mp3"); // Your 1-sec flap sound
+  let endSound = new Audio();
+
+  // 3. Game Variables
   let birdX = 50, birdY = 250, birdVelocity = 0;
   const gravity = 0.3, jump = -7;
   let pipes = [], frame = 0, score = 0, bgX = 0;
   let gameOver = false, gameWon = false;
   
-  // 3. Effects & Memes
+  // 4. Effects & Memes
   let lastClickTime = 0, clickCount = 0, fartTimer = 0;
   const memes = ["meme1.gif", "meme2.gif", "meme3.gif", "meme4.gif", "meme5.gif"];
   const memeSounds = ["sound1.mp3", "sound2.mp3", "sound3.mp3", "sound4.mp3", "sound5.mp3"];
   let selectedMeme = new Image();
-  let endSound = new Audio();
   let endTriggered = false, showScoreboard = false, showSkipButton = false;
 
-  // 4. Stats
+  // 5. Stats
   let highScore = localStorage.getItem("highScore") || 0;
   let totalDeaths = localStorage.getItem("totalDeaths") || 0;
 
   canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    const touchX = e.touches[0].clientX - rect.left;
     const touchY = e.touches[0].clientY - rect.top;
 
     if (!gameOver && !gameWon) {
+        // --- FLAP SOUND LOGIC ---
+        flapSound.currentTime = 0; // Rewind to start
+        flapSound.play().catch(() => {}); // Play sound
+
         birdVelocity = jump; 
         let currentTime = Date.now();
         if (currentTime - lastClickTime < 300) clickCount++;
@@ -66,29 +72,28 @@
 
   function updatePipes() {
     if (frame % 90 === 0) {
-      let gap = 170; 
-      let top = Math.random() * 200 + 20;
-      pipes.push({ x: canvas.width, top: top, bottom: top + gap });
+      let gap = 160; 
+      let topHeight = Math.random() * (canvas.height / 2) + 50;
+      pipes.push({ x: canvas.width, top: topHeight, bottom: topHeight + gap });
     }
     pipes.forEach(p => {
       p.x -= 2;
-      if (birdX + 10 > p.x && birdX - 10 < p.x + 90) {
-          if (birdY - 10 < p.top || birdY + 10 > p.bottom) gameOver = true;
+      if (birdX + 15 > p.x && birdX - 15 < p.x + 80) {
+          if (birdY - 15 < p.top || birdY + 15 > p.bottom) gameOver = true;
       }
       if (p.x === 60) {
           score++;
           if (score >= 10) gameWon = true; 
       }
     });
-    pipes = pipes.filter(p => p.x > -50);
+    pipes = pipes.filter(p => p.x > -100);
   }
 
   function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // DRAW BACKGROUND (Always draw first)
     if (bgImg.complete) {
-        if (!gameOver && !gameWon) bgX -= 0.5; // Slower scroll for depth
+        if (!gameOver && !gameWon) bgX -= 0.5;
         if (bgX <= -canvas.width) bgX = 0;
         ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
         ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
@@ -100,9 +105,15 @@
       if (birdY > canvas.height || birdY < 0) gameOver = true;
 
       updatePipes();
+      
       pipes.forEach(p => {
-          ctx.drawImage(pipeImg, p.x, 0, 90, p.top);
-          ctx.drawImage(pipeImg, p.x, p.bottom, 90, canvas.height - p.bottom);
+          let pipeWidth = 80;
+          ctx.save(); 
+          ctx.translate(p.x + pipeWidth / 2, p.top);
+          ctx.scale(1, -1);
+          ctx.drawImage(pipeImg, -pipeWidth / 2, 0, pipeWidth, p.top);
+          ctx.restore(); 
+          ctx.drawImage(pipeImg, p.x, p.bottom, pipeWidth, canvas.height - p.bottom);
       });
 
       ctx.save();
@@ -116,13 +127,12 @@
       ctx.drawImage(birdImg, -30, -30, 60, 60);
       ctx.restore();
 
-      ctx.fillStyle = "white"; ctx.font = "bold 20px Arial";
-      ctx.fillText("Score: " + score, 10, 30);
+      ctx.fillStyle = "white"; ctx.font = "bold 22px Arial";
+      ctx.fillText("Score: " + score, 15, 35);
       frame++;
       requestAnimationFrame(gameLoop);
     } 
     else {
-      // --- END SCREEN ---
       if (!endTriggered) {
         let waitTime = 4000; 
         if (gameWon) {
@@ -146,11 +156,10 @@
         setTimeout(() => { showScoreboard = true; }, waitTime); 
       }
 
-      // Draw Animating Meme
       ctx.drawImage(selectedMeme, (canvas.width/2) - 125, 80, 250, 250);
 
       if (showSkipButton && !showScoreboard) {
-          ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+          ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
           ctx.fillRect(130, 420, 100, 40);
           ctx.fillStyle = "black"; ctx.font = "bold 16px Arial";
           ctx.fillText("SKIP >>", 153, 445);
@@ -173,7 +182,6 @@
     }
   }
 
-  // Final check: Load all 3 main images before starting
   let loaded = 0;
   function checkReady() { if(++loaded >= 3) gameLoop(); }
   birdImg.onload = pipeImg.onload = bgImg.onload = checkReady;
