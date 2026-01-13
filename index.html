@@ -34,14 +34,17 @@
   flapSound.preload = "auto";
   let endSound = new Audio();
 
+  // Variables
   let birdX = 50, birdY = 250, birdVelocity = 0;
   let gravity = 0.22, jump = -5.0;
   let pipes = [], frame = 0, score = 0, bgX = 0;
   let gameOver = false, gameWon = false, gameStarted = false;
   let gamePhase = 1; 
 
-  // Tap Effects Variables
+  // Tap Effects & Stats
   let lastClickTime = 0, clickCount = 0, effectTimer = 0;
+  let highScore = parseInt(localStorage.getItem("highScore")) || 0;
+  let totalDeaths = parseInt(localStorage.getItem("totalDeaths")) || 0;
 
   const memes = ["meme1.gif", "meme2.gif", "meme3.gif", "meme4.gif", "meme5.gif"];
   const memeSounds = ["sound1.mp3", "sound2.mp3", "sound3.mp3", "sound4.mp3", "sound5.mp3"];
@@ -52,23 +55,18 @@
     if (!gameStarted) { gameStarted = true; return; }
 
     if (!gameOver && !gameWon) {
-        // 1. Play Sound
-        flapSound.pause(); flapSound.currentTime = 0; 
-        flapSound.play().catch(()=>{});
+        flapSound.pause(); flapSound.currentTime = 0; flapSound.play().catch(()=>{});
         
-        // 2. Tap Counting for Fart/Fire
         let currentTime = Date.now();
         if (currentTime - lastClickTime < 300) clickCount++;
         else clickCount = 1;
         lastClickTime = currentTime;
         if (clickCount >= 2) effectTimer = 15; 
 
-        // 3. Movement Logic
         if (gamePhase === 1) {
             birdVelocity = jump; 
         } else if (gamePhase === 2) {
-            // JUMP ONLY IF CLOSE TO GROUND
-            if (birdY >= 420) birdVelocity = -10.5; 
+            if (birdY >= 420) birdVelocity = -12; // INCREASED JUMP FOR DINO
         }
     } else {
         const rect = canvas.getBoundingClientRect();
@@ -125,8 +123,8 @@
 
     if (!gameStarted) {
         ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0,0, canvas.width, canvas.height);
-        ctx.fillStyle = "white"; ctx.font = "bold 40px Arial"; ctx.fillText("READY?", 100, 220);
-        ctx.font = "20px Arial"; ctx.fillText("TAP TO GO!", 120, 260);
+        ctx.fillStyle = "white"; ctx.font = "bold 30px Arial"; ctx.fillText("READY?", 120, 220);
+        ctx.font = "18px Arial"; ctx.fillText("TAP TO START", 115, 260);
         birdY = 250 + Math.sin(Date.now() / 200) * 10;
     }
 
@@ -152,17 +150,13 @@
           } else ctx.drawImage(pipeImg, p.x, p.top, pW, 460 - p.top);
       });
 
-      // Draw Player + Fart/Fire Effects
       ctx.save(); ctx.translate(birdX, birdY);
       if (gamePhase === 1) ctx.rotate(birdVelocity * 0.08);
-      
       if (effectTimer > 0) {
           ctx.font = "40px Arial";
-          // 2-3 taps = Fart, 4+ taps = Fire
           ctx.fillText(clickCount >= 4 ? "🔥" : "💨", -60, 20);
           effectTimer--;
       }
-
       ctx.drawImage(birdImg, -25, -25, 50, 50); 
       ctx.restore();
 
@@ -172,19 +166,23 @@
       requestAnimationFrame(gameLoop);
     } 
     else {
-      // Meme End Logic - Fixed Sound Loading
       if (!endTriggered) {
         let isWin = score >= 20;
         let randomIndex = Math.floor(Math.random() * memes.length);
-        
         memeImg.src = isWin ? "win.gif" : memes[randomIndex];
-        // Ensure the sound matches the selected meme
         endSound.src = isWin ? "win.mp3" : memeSounds[randomIndex];
-        
         memeImg.style.display = "block";
-        endSound.load(); // Forces browser to load the new file
-        endSound.play().catch(() => {});
         
+        // --- FIXED STATS LOGIC ---
+        totalDeaths++;
+        localStorage.setItem("totalDeaths", totalDeaths);
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem("highScore", highScore);
+        }
+
+        endSound.load();
+        endSound.play().catch(() => {});
         endTriggered = true;
         setTimeout(() => { showSkipButton = true; }, 1500); 
         setTimeout(() => { showScoreboard = true; }, isWin ? 8000 : 4000); 
@@ -192,11 +190,17 @@
       
       if (showScoreboard) {
           memeImg.style.display = "none";
-          ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; ctx.fillRect(40, 100, 280, 300);
+          ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; ctx.fillRect(40, 80, 280, 340);
           ctx.fillStyle = "white"; ctx.font = "bold 26px Arial";
-          ctx.fillText(score >= 20 ? "🏆 ULTIMATE WIN!" : "GAME OVER", 80, 160);
-          ctx.font = "20px Arial"; ctx.fillText("Final Score: " + score, 80, 220);
-          ctx.fillText("Tap to Restart", 115, 350);
+          ctx.fillText(score >= 20 ? "🏆 ULTIMATE WIN!" : "GAME OVER", 80, 130);
+          
+          ctx.font = "20px Arial";
+          ctx.fillText("Final Score: " + score, 80, 180);
+          ctx.fillText("High Score: " + highScore, 80, 220);
+          ctx.fillText("Total Deaths: " + totalDeaths, 80, 260);
+          
+          ctx.fillStyle = "#70c5ce"; ctx.font = "bold 18px Arial";
+          ctx.fillText("Tap to Restart", 115, 360);
       } else if (showSkipButton) {
           ctx.fillStyle = "rgba(255, 255, 255, 0.7)"; ctx.fillRect(130, 420, 100, 40);
           ctx.fillStyle = "black"; ctx.font = "bold 16px Arial"; ctx.fillText("SKIP >>", 153, 445);
