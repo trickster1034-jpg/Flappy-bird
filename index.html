@@ -6,27 +6,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { margin: 0; background: #222; text-align: center; font-family: Arial; overflow: hidden; }
-    canvas { display: block; margin: auto; background: #70c5ce; touch-action: manipulation; }
+    #game-container { position: relative; width: 360px; margin: auto; }
+    canvas { display: block; background: #70c5ce; touch-action: manipulation; }
+    /* This is the secret to making the GIF animate! */
+    #meme-overlay { 
+      position: absolute; 
+      top: 80px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      width: 250px; 
+      display: none; 
+      z-index: 10;
+    }
     h2 { margin: 5px; color: white; text-shadow: 1px 1px 2px black; }
   </style>
 </head>
 <body>
 
 <h2>Score 10 to Win! 🐦</h2>
-<canvas id="game" width="360" height="500"></canvas>
+<div id="game-container">
+  <canvas id="game" width="360" height="500"></canvas>
+  <img id="meme-overlay" src="" alt="Meme animation">
+</div>
 
 <script>
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
+  const memeImg = document.getElementById("meme-overlay");
   
   // 1. Assets
   const pipeImg = new Image(); pipeImg.src = "pipe.png";
   const birdImg = new Image(); birdImg.src = "bird.png"; 
   const bgImg = new Image();   bgImg.src = "bg.png"; 
 
-  // 2. Audio with Instant-Response Logic
+  // 2. Audio
   const flapSound = new Audio("flap.mp3");
-  flapSound.preload = "auto"; // Pre-load into memory
+  flapSound.preload = "auto";
   let endSound = new Audio();
 
   // 3. Game Variables
@@ -35,36 +50,23 @@
   let pipes = [], frame = 0, score = 0, bgX = 0;
   let gameOver = false, gameWon = false;
   
-  // 4. Effects & Memes
-  let lastClickTime = 0, clickCount = 0, fartTimer = 0;
+  // 4. Memes
+  let endTriggered = false, showScoreboard = false, showSkipButton = false;
   const memes = ["meme1.gif", "meme2.gif", "meme3.gif", "meme4.gif", "meme5.gif"];
   const memeSounds = ["sound1.mp3", "sound2.mp3", "sound3.mp3", "sound4.mp3", "sound5.mp3"];
-  let selectedMeme = new Image();
-  let endTriggered = false, showScoreboard = false, showSkipButton = false;
 
   // 5. Stats
   let highScore = localStorage.getItem("highScore") || 0;
   let totalDeaths = localStorage.getItem("totalDeaths") || 0;
 
-  // INPUT HANDLER
   canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
     const touchY = e.touches[0].clientY - rect.top;
 
     if (!gameOver && !gameWon) {
-        // --- INSTANT AUDIO TRIGGER ---
-        // This stops the previous play and restarts immediately
-        flapSound.pause();
-        flapSound.currentTime = 0; 
-        flapSound.play().catch(err => console.log("Audio waiting for user interaction"));
-
+        flapSound.pause(); flapSound.currentTime = 0; flapSound.play().catch(()=>{});
         birdVelocity = jump; 
-        let currentTime = Date.now();
-        if (currentTime - lastClickTime < 300) clickCount++;
-        else clickCount = 1;
-        lastClickTime = currentTime;
-        if (clickCount >= 2) fartTimer = 15; 
     } else {
         if (showSkipButton && !showScoreboard && touchY > 400) {
             showScoreboard = true;
@@ -104,33 +106,17 @@
     }
 
     if (!gameOver && !gameWon) {
-      birdVelocity += gravity;
-      birdY += birdVelocity;
+      birdVelocity += gravity; birdY += birdVelocity;
       if (birdY > canvas.height || birdY < 0) gameOver = true;
-
       updatePipes();
-      
       pipes.forEach(p => {
           let pipeWidth = 80;
-          ctx.save(); 
-          ctx.translate(p.x + pipeWidth / 2, p.top);
-          ctx.scale(1, -1);
-          ctx.drawImage(pipeImg, -pipeWidth / 2, 0, pipeWidth, p.top);
-          ctx.restore(); 
+          ctx.save(); ctx.translate(p.x + pipeWidth/2, p.top); ctx.scale(1, -1);
+          ctx.drawImage(pipeImg, -pipeWidth/2, 0, pipeWidth, p.top); ctx.restore(); 
           ctx.drawImage(pipeImg, p.x, p.bottom, pipeWidth, canvas.height - p.bottom);
       });
-
-      ctx.save();
-      ctx.translate(birdX, birdY);
-      ctx.rotate(birdVelocity * 0.05);
-      if (fartTimer > 0) {
-        ctx.font = "40px Arial";
-        ctx.fillText(clickCount >= 5 ? "🔥" : "💨", -70, 25);
-        fartTimer--;
-      }
-      ctx.drawImage(birdImg, -30, -30, 60, 60);
-      ctx.restore();
-
+      ctx.save(); ctx.translate(birdX, birdY); ctx.rotate(birdVelocity * 0.05);
+      ctx.drawImage(birdImg, -30, -30, 60, 60); ctx.restore();
       ctx.fillStyle = "white"; ctx.font = "bold 22px Arial";
       ctx.fillText("Score: " + score, 15, 35);
       frame++;
@@ -140,16 +126,17 @@
       if (!endTriggered) {
         let waitTime = 4000; 
         if (gameWon) {
-            selectedMeme.src = "win.gif";
+            memeImg.src = "win.gif";
             endSound.src = "win.mp3";
             waitTime = 8000; 
         } else {
             let randomIndex = Math.floor(Math.random() * memes.length);
-            selectedMeme.src = memes[randomIndex];
+            memeImg.src = memes[randomIndex];
             endSound.src = memeSounds[randomIndex];
             totalDeaths++;
             localStorage.setItem("totalDeaths", totalDeaths);
         }
+        memeImg.style.display = "block"; // Show the real animating GIF
         if (score > highScore) {
             highScore = score;
             localStorage.setItem("highScore", highScore);
@@ -160,8 +147,6 @@
         setTimeout(() => { showScoreboard = true; }, waitTime); 
       }
 
-      ctx.drawImage(selectedMeme, (canvas.width/2) - 125, 80, 250, 250);
-
       if (showSkipButton && !showScoreboard) {
           ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
           ctx.fillRect(130, 420, 100, 40);
@@ -170,6 +155,7 @@
       }
 
       if (showScoreboard) {
+          memeImg.style.display = "none"; // Hide GIF when scoreboard appears
           ctx.fillStyle = gameWon ? "rgba(255, 215, 0, 0.95)" : "rgba(0, 0, 0, 0.85)";
           ctx.fillRect(40, 100, 280, 300);
           ctx.fillStyle = gameWon ? "black" : "white";
