@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Bird Touch</title>
+  <title>Flappy Bird Meme Edition</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { margin: 0; background: skyblue; text-align: center; font-family: Arial; overflow: hidden; }
-    canvas { display: block; margin: auto; background: #70c5ce; touch-action: manipulation; border: 2px solid #000; }
-    h2 { margin: 5px; }
+    canvas { display: block; margin: auto; background: #70c5ce; touch-action: manipulation; }
   </style>
 </head>
 <body>
@@ -19,80 +18,40 @@
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
   
-  // 1. Assets Loading
-  const pipeImg = new Image();
-  pipeImg.src = "pipe.png";
-  const birdImg = new Image();
-  birdImg.src = "bird.png"; 
+  const pipeImg = new Image(); pipeImg.src = "pipe.png";
+  const birdImg = new Image(); birdImg.src = "bird.png"; 
 
-  // 2. Game Variables
-  let birdX = 50;
-  let birdY = 250;
-  let birdVelocity = 0;
-  const gravity = 0.3;
-  const jump = -7;
-  let pipes = [];
-  let frame = 0;
-  let score = 0;
-  let gameOver = false;
-  let gameWon = false;
+  let birdX = 50, birdY = 250, birdVelocity = 0;
+  const gravity = 0.3, jump = -7;
+  let pipes = [], frame = 0, score = 0;
+  let gameOver = false, gameWon = false;
   
-  // 3. Combo/Touch Variables
-  let lastClickTime = 0;
-  let clickCount = 0;
-  let fartTimer = 0;
+  let lastClickTime = 0, clickCount = 0, fartTimer = 0;
 
-  // 4. Meme/Stats Variables
   const memes = ["meme1.gif", "meme2.gif", "meme3.gif", "meme4.gif", "meme5.gif"];
   const memeSounds = ["sound1.mp3", "sound2.mp3", "sound3.mp3", "sound4.mp3", "sound5.mp3"];
   let selectedMeme = new Image();
   let gameOverSound = new Audio();
   let memeChosen = false;
+  let showScoreboard = false; // New variable to delay the score
+
   let highScore = localStorage.getItem("highScore") || 0;
   let totalDeaths = localStorage.getItem("totalDeaths") || 0;
 
-  // 5. Input Handling
   canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
     if (!gameOver && !gameWon) {
         birdVelocity = jump; 
-        let currentTime = new Date().getTime();
-        if (currentTime - lastClickTime < 300) { 
-            clickCount++;
-        } else {
-            clickCount = 1;
-        }
+        let currentTime = Date.now();
+        if (currentTime - lastClickTime < 300) clickCount++;
+        else clickCount = 1;
         lastClickTime = currentTime;
         if (clickCount >= 2) fartTimer = 15; 
     } else {
-        location.reload(); 
+        // Only allow reload if the score is showing or if you won
+        if (showScoreboard || gameWon) location.reload(); 
     }
   });
-
-  function drawBird() {
-    ctx.save(); 
-    ctx.translate(birdX, birdY); 
-    ctx.rotate(birdVelocity * 0.05); 
-    if (fartTimer > 0) {
-        ctx.font = "40px Arial";
-        ctx.fillText(clickCount >= 5 ? "🔥" : "💨", -70, 25); 
-        fartTimer--; 
-    }
-    ctx.drawImage(birdImg, -30, -30, 60, 60); 
-    ctx.restore(); 
-  }
-
-  function drawPipes() {
-    pipes.forEach(p => {
-        let pipeWidth = 90; // Fixed width for bird clearance
-        ctx.save();
-        ctx.translate(p.x + (pipeWidth / 2), p.top);
-        ctx.scale(1, -1);
-        ctx.drawImage(pipeImg, -(pipeWidth / 2), 0, pipeWidth, p.top);
-        ctx.restore();
-        ctx.drawImage(pipeImg, p.x, p.bottom, pipeWidth, canvas.height - p.bottom);
-    });
-  }
 
   function updatePipes() {
     if (frame % 90 === 0) {
@@ -102,7 +61,6 @@
     }
     pipes.forEach(p => {
       p.x -= 2;
-      // Precision Hitbox logic
       if (birdX + 10 > p.x && birdX - 10 < p.x + 90) {
           if (birdY - 10 < p.top || birdY + 10 > p.bottom) gameOver = true;
       }
@@ -114,77 +72,92 @@
     pipes = pipes.filter(p => p.x > -50);
   }
 
-  function drawScore() {
-    ctx.fillStyle = "white";
-    ctx.font = "20px Arial";
-    ctx.fillText("Score: " + score, 10, 30);
-  }
-
   function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!gameOver && !gameWon) {
-      // Game Physics
       birdVelocity += gravity;
       birdY += birdVelocity;
       if (birdY > canvas.height || birdY < 0) gameOver = true;
 
       updatePipes();
-      drawPipes();
-      drawBird();
-      drawScore();
+      pipes.forEach(p => {
+          ctx.drawImage(pipeImg, p.x, 0, 90, p.top); // Top (simplified)
+          ctx.drawImage(pipeImg, p.x, p.bottom, 90, canvas.height - p.bottom); // Bottom
+      });
+
+      // Draw Bird
+      ctx.save();
+      ctx.translate(birdX, birdY);
+      ctx.rotate(birdVelocity * 0.05);
+      if (fartTimer > 0) {
+        ctx.font = "40px Arial";
+        ctx.fillText(clickCount >= 5 ? "🔥" : "💨", -70, 25);
+        fartTimer--;
+      }
+      ctx.drawImage(birdImg, -30, -30, 60, 60);
+      ctx.restore();
+
+      ctx.fillStyle = "white"; ctx.font = "20px Arial";
+      ctx.fillText("Score: " + score, 10, 30);
       frame++;
       requestAnimationFrame(gameLoop);
     } 
+    else if (gameWon) {
+      // WIN LOGIC: NO MEME, JUST VICTORY
+      ctx.fillStyle = "rgba(255, 215, 0, 0.9)";
+      ctx.fillRect(40, 150, 280, 200);
+      ctx.fillStyle = "black";
+      ctx.font = "bold 30px Arial";
+      ctx.fillText("🏆 YOU WON! 🏆", 75, 210);
+      ctx.font = "20px Arial";
+      ctx.fillText("Final Score: " + score, 110, 260);
+      ctx.fillText("Tap to Play Again", 100, 310);
+    } 
     else {
-      // End Screen Logic (Win/Loss)
+      // LOSS LOGIC: SHOW MEME THEN SCORE
       if (!memeChosen) {
         let randomIndex = Math.floor(Math.random() * memes.length);
         selectedMeme.src = memes[randomIndex];
         gameOverSound.src = memeSounds[randomIndex];
         gameOverSound.play();
         
-        if (!gameWon) {
-          totalDeaths++;
-          localStorage.setItem("totalDeaths", totalDeaths);
-          if (score > highScore) {
-              highScore = score;
-              localStorage.setItem("highScore", highScore);
-          }
+        totalDeaths++;
+        localStorage.setItem("totalDeaths", totalDeaths);
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem("highScore", highScore);
         }
+        
         memeChosen = true;
+
+        // THE TIMER: Wait 4 seconds before showing the score
+        setTimeout(() => {
+          showScoreboard = true;
+        }, 4000); 
       }
 
-      // Display the Meme and Stats
-      ctx.drawImage(selectedMeme, (canvas.width/2) - 100, 50, 200, 200);
-      
-      // Overlay Box
-      ctx.fillStyle = gameWon ? "rgba(255, 215, 0, 0.9)" : "rgba(0, 0, 0, 0.7)"; 
-      ctx.fillRect(40, 260, 280, 190);
-      
-      ctx.fillStyle = gameWon ? "black" : "white";
-      ctx.font = "bold 24px Arial";
-      ctx.fillText(gameWon ? "🏆 YOU WIN! 🏆" : "GAME OVER", 95, 295);
-      
-      ctx.font = "20px Arial";
-      ctx.fillText("Score: " + score, 80, 335);
-      ctx.fillText("Highest: " + highScore, 80, 365);
-      ctx.fillText("Total Deaths: " + totalDeaths, 80, 395);
-      
-      ctx.font = "16px Arial";
-      ctx.fillText("Tap to Restart", 125, 430);
+      // Draw the Meme while waiting
+      ctx.drawImage(selectedMeme, (canvas.width/2) - 125, 100, 250, 250);
+
+      if (showScoreboard) {
+          // Draw the scoreboard overlay after 4 seconds
+          ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+          ctx.fillRect(40, 100, 280, 300);
+          ctx.fillStyle = "white";
+          ctx.font = "bold 24px Arial";
+          ctx.fillText("GAME OVER", 110, 150);
+          ctx.font = "20px Arial";
+          ctx.fillText("Score: " + score, 80, 200);
+          ctx.fillText("Highest: " + highScore, 80, 240);
+          ctx.fillText("Total Deaths: " + totalDeaths, 80, 280);
+          ctx.fillText("Tap to Restart", 115, 360);
+      }
+      requestAnimationFrame(gameLoop);
     }
   }
 
-  // 6. Start the Game once basic images load
-  let loadedCount = 0;
-  function startIfReady() {
-    loadedCount++;
-    if (loadedCount === 2) gameLoop();
-  }
-  birdImg.onload = startIfReady;
-  pipeImg.onload = startIfReady;
+  birdImg.onload = pipeImg.onload = () => { if(birdImg.complete && pipeImg.complete) gameLoop(); };
 </script>
-
 </body>
 </html>
