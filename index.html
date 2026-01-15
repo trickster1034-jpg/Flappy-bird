@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino: Fix Edition</title>
+  <title>Flappy Dino - Clean Edition</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
-    body { margin: 0; background: #111; overflow: hidden; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    #game-container { position: relative; width: 360px; height: 500px; }
-    canvas { background: #70c5ce; display: block; touch-action: none; border: 2px solid #444; }
-    #meme-overlay { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 260px; display: none; z-index: 10; }
+    body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; }
+    #game-container { position: relative; width: 360px; height: 500px; margin: auto; }
+    canvas { background: #70c5ce; display: block; touch-action: none; }
+    #meme-overlay { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 260px; display: none; border-radius: 10px; z-index: 10; }
   </style>
 </head>
 <body>
@@ -23,159 +23,146 @@
   const ctx = canvas.getContext("2d");
   const memeImg = document.getElementById("meme-overlay");
 
-  // Audio setup
-  const flapSound = new Audio("flap.mp3");
-  const hitSound = new Audio("hit.mp3"); // Ensure these files exist!
-
-  // Image assets
-  const img = { bird: new Image(), bg: new Image(), pipe: new Image(), meteor: new Image(), girl: new Image(), arrow: new Image(), heart: new Image(), shield: new Image() };
-  img.bird.src = "bird.png"; img.bg.src = "bg.png"; img.pipe.src = "pipe.png";
-  img.meteor.src = "meteor.png"; img.girl.src = "girl.png"; img.arrow.src = "arrow.png";
+  // Assets
+  const img = { pipe: new Image(), bird: new Image(), bg: new Image(), heart: new Image(), shield: new Image() };
+  img.pipe.src = "pipe.png"; img.bird.src = "bird.png"; img.bg.src = "bg.png";
   img.heart.src = "heart.png"; img.shield.src = "shield.png";
 
-  // Game Variables
-  let birdX = 50, birdY = 250, birdV = 0, hp = 200, score = 0, frame = 0, bgX = 0;
-  let pipes = [], meteors = [], arrows = [], damageTexts = [], hearts = [], shields = [];
-  let gameStarted = false, gameOver = false, gameWon = false, gamePhase = 1;
-  let girlY = 100, girlDir = 1, hasShield = false, endTriggered = false, showScoreboard = false;
-  let speedMult = 2.5; // Base speed
-  let shakeTime = 0, flashColor = "rgba(0,0,0,0)", flashTime = 0;
+  const flapSound = new Audio("flap.mp3");
+  let endSound = new Audio();
 
-  function triggerHit(amt, type = 'damage') {
-    if (gameWon) return;
-    if (type === 'heal') {
-        hp = Math.min(200, hp + amt);
-        damageTexts.push({ x: birdX, y: birdY, val: `+${amt} HP`, life: 40, col: "#0f0" });
-    } else {
-        if (hasShield && amt < 200) {
-            hasShield = false;
-            damageTexts.push({ x: birdX, y: birdY, val: "BLOCK!", life: 40, col: "#0cf" });
-        } else {
-            hp -= amt;
-            damageTexts.push({ x: birdX, y: birdY, val: `-${amt}`, life: 40, col: "#f00" });
-            shakeTime = 15; flashTime = 10; flashColor = "rgba(255,0,0,0.4)";
-        }
-    }
-    if (hp <= 0) { hp = 0; gameOver = true; }
-  }
+  // Game variables
+  let birdX = 50, birdY = 250, birdV = 0, hp = 100; // Added HP for items
+  let score = 0, frame = 0, bgX = 0, speed = 1.8;
+  let pipes = [], items = [], gameStarted = false, gameOver = false, gameWon = false;
+  let gamePhase = 1, showScoreboard = false, endTriggered = false, hasShield = false;
+  
+  let highScore = localStorage.getItem("highScore") || 0;
+  let deaths = localStorage.getItem("totalDeaths") || 0;
 
   function doTap() {
-    // Unlock Audio for browsers
-    if (flapSound.paused) flapSound.play().catch(()=>{}); 
-    
     if (gameOver || gameWon) { if (showScoreboard) location.reload(); return; }
     if (!gameStarted) { gameStarted = true; return; }
+
+    flapSound.currentTime = 0; flapSound.play().catch(()=>{});
     
-    flapSound.currentTime = 0;
-    flapSound.play().catch(()=>{});
-    
-    if (gamePhase === 1) birdV = -5; else if (birdY >= 425) birdV = -12;
+    if (gamePhase === 1) birdV = -5;
+    else if (birdY >= 420) birdV = -12;
   }
 
-  window.addEventListener("mousedown", doTap);
   window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
+  window.addEventListener("mousedown", doTap);
 
   function loop() {
-    ctx.save();
-    if (shakeTime > 0) { ctx.translate(Math.random()*10-5, Math.random()*10-5); shakeTime--; }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // BG Logic
-    ctx.fillStyle = (gamePhase === 1) ? "#70c5ce" : "#1a1a2e";
-    ctx.fillRect(0, 0, 360, 500);
+    // Background
+    if (img.bg.complete) {
+      if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.5 : 1.5);
+      if (bgX <= -360) bgX = 0;
+      ctx.drawImage(img.bg, bgX, 0, 360, 500);
+      ctx.drawImage(img.bg, bgX + 360, 0, 360, 500);
+    }
 
-    if (gameStarted && !gameOver && !gameWon) {
+    if (!gameStarted) {
+      ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0,0,360,500);
+      ctx.fillStyle = "white"; ctx.font = "bold 30px Arial"; ctx.textAlign="center";
+      ctx.fillText("TAP TO START", 180, 250); ctx.textAlign="left";
+    } else if (!gameOver && !gameWon) {
       frame++;
-      // Gradual Speed Increase in Phase 1
-      if (gamePhase === 1) speedMult += 0.0005; 
-
-      if (frame % 60 === 0) {
-        score++;
-        if (score === 20) { gamePhase = 2; birdY = 425; pipes = []; speedMult = 3.5; }
-        if (score >= 40) gameWon = true;
-      }
+      speed += 0.0003; // Gradual Speed increase
 
       birdV += (gamePhase === 1 ? 0.22 : 0.48);
       birdY += birdV;
-      if (gamePhase === 1) { if (birdY > 500 || birdY < 0) gameOver = true; }
-      else if (birdY > 425) { birdY = 425; birdV = 0; }
 
-      // Spawning
-      if (!gameWon) {
-        if (score < 30 && frame % 100 === 0) {
-          if (gamePhase === 1) pipes.push({x: 360, top: Math.random()*150+50, bot: 350});
-          else pipes.push({x: 360, top: 460-100, cactus: true});
-        }
-        if (score >= 30) {
-          girlY += 3 * girlDir; if (girlY > 350 || girlY < 50) girlDir *= -1;
-          if (frame % 50 === 0) meteors.push({x: 380, y: Math.random()*250, sX: 5, sY: 2, ang: 0});
-          if (frame % 80 === 0) arrows.push({x: 280, y: girlY + 25, sX: 7});
-        }
+      if (gamePhase === 1) {
+        if (birdY > 500 || birdY < 0) gameOver = true;
+      } else {
+        if (birdY > 425) { birdY = 425; birdV = 0; }
       }
 
-      // Collisions & Movement
-      pipes.forEach(p => { 
-        p.x -= speedMult; 
-        if (p.cactus && birdX+15 > p.x+20 && birdX-15 < p.x+80 && birdY+15 > p.top) triggerHit(200);
+      // Spawning Pipes
+      let spawnRate = (gamePhase === 1) ? 140 : 115;
+      if (frame % spawnRate === 0) {
+        let t = Math.random()*150 + 50;
+        if (gamePhase === 1) pipes.push({x: 360, top: t, bot: t+190, type: 'f', p: false});
+        else pipes.push({x: 360, top: 460-(Math.random()*50+75), type: 'd', p: false});
+      }
+
+      // Spawning Items (Heart/Shield)
+      if (frame % 600 === 0) {
+        items.push({x: 360, y: 200 + Math.random()*100, type: Math.random() > 0.5 ? 'h' : 's'});
+      }
+
+      // Logic for Pipes
+      pipes.forEach(p => {
+        p.x -= (gamePhase === 1 ? speed : speed + 1);
+        // Collision
+        if (birdX + 15 > p.x + 10 && birdX - 15 < p.x + 70) {
+          if (p.type === 'f' && (birdY - 12 < p.top || birdY + 12 > p.bot)) handleDeath();
+          else if (p.type === 'd' && birdY + 15 > p.top + 10) handleDeath();
+        }
+        // Score
+        if (p.x < birdX && !p.p) {
+          score++; p.p = true;
+          if (score === 10) { gamePhase = 2; pipes = []; birdY = 425; speed = 2.5; }
+          if (score >= 40) gameWon = true; // High score goal
+        }
       });
-      meteors.forEach((m, i) => { 
-        m.x -= m.sX; m.y += m.sY; m.ang += 0.1;
-        if (Math.hypot(birdX-m.x, birdY-m.y) < 30) { triggerHit(50); meteors.splice(i, 1); }
+
+      // Logic for Items
+      items.forEach((it, i) => {
+        it.x -= speed;
+        if (Math.hypot(birdX - it.x, birdY - it.y) < 30) {
+          if (it.type === 'h') hp = Math.min(100, hp + 20);
+          else hasShield = true;
+          items.splice(i, 1);
+        }
       });
-      arrows.forEach((a, i) => { 
-        a.x -= a.sX;
-        if (birdX+15 > a.x && birdX-15 < a.x+30 && Math.abs(birdY-a.y) < 20) { triggerHit(25); arrows.splice(i, 1); }
-      });
+
+      pipes = pipes.filter(p => p.x > -100);
+      items = items.filter(it => it.x > -50);
     }
 
-    // DRAWING (With Scaling Fixes)
+    // DRAWING
     pipes.forEach(p => {
-      if (img.pipe.complete && img.pipe.width > 0) {
-        if (!p.cactus) {
-          // Draw Top Pipe (Upside Down)
-          ctx.save(); ctx.translate(p.x + 50, p.top); ctx.scale(1, -1);
-          ctx.drawImage(img.pipe, 0, 0, img.pipe.width, img.pipe.height, -50, 0, 100, p.top);
+      if (img.pipe.complete) {
+        if (p.type === 'f') {
+          ctx.save(); ctx.translate(p.x+40, p.top); ctx.scale(1,-1);
+          ctx.drawImage(img.pipe, 0, 0, img.pipe.width, img.pipe.height, -40, 0, 80, p.top);
           ctx.restore();
-          // Draw Bottom Pipe
-          ctx.drawImage(img.pipe, 0, 0, img.pipe.width, img.pipe.height, p.x, p.top + 150, 100, 500);
-        } else {
-          ctx.drawImage(img.pipe, 0, 0, img.pipe.width, img.pipe.height, p.x, p.top, 100, 460-p.top);
-        }
+          ctx.drawImage(img.pipe, 0, 0, img.pipe.width, img.pipe.height, p.x, p.bot, 80, 500-p.bot);
+        } else ctx.drawImage(img.pipe, 0, 0, img.pipe.width, img.pipe.height, p.x, p.top, 80, 460-p.top);
       }
     });
 
-    if (score >= 30 && !gameWon) {
-      if (img.girl.complete) ctx.drawImage(img.girl, 0, 0, img.girl.width, img.girl.height, 280, girlY, 60, 60);
-    }
-
-    meteors.forEach(m => {
-      ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.ang);
-      if (img.meteor.complete) ctx.drawImage(img.meteor, -25, -25, 50, 50);
-      ctx.restore();
+    items.forEach(it => {
+        let drawImg = it.type === 'h' ? img.heart : img.shield;
+        if (drawImg.complete) ctx.drawImage(drawImg, it.x-15, it.y-15, 30, 30);
     });
 
-    arrows.forEach(a => { if (img.arrow.complete) ctx.drawImage(img.arrow, a.x, a.y, 40, 15); });
-
-    // Dino
+    // Bird
     ctx.save(); ctx.translate(birdX, birdY);
-    if (img.bird.complete) ctx.drawImage(img.bird, -25, -25, 50, 50);
+    if (gamePhase === 1) ctx.rotate(birdV * 0.1);
     if (hasShield) {
-      ctx.strokeStyle = "#0cf"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0,0,32,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle = "#0cf"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0,0,30,0,Math.PI*2); ctx.stroke();
     }
+    if (img.bird.complete) ctx.drawImage(img.bird, -25, -25, 50, 50);
     ctx.restore();
-
-    // Damage Text & Flash
-    damageTexts.forEach((d, i) => {
-      ctx.fillStyle = d.col; ctx.font = "bold 20px Arial"; ctx.fillText(d.val, d.x, d.y - (40 - d.life));
-      d.life--; if (d.life <= 0) damageTexts.splice(i, 1);
-    });
-    if (flashTime > 0) { ctx.fillStyle = flashColor; ctx.fillRect(0,0,360,500); flashTime--; }
 
     ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.fillText("Score: "+score, 20, 40);
-    if (!gameStarted) { ctx.fillStyle = "white"; ctx.textAlign="center"; ctx.fillText("CLICK TO START", 180, 250); ctx.textAlign="left"; }
 
     if (gameOver || gameWon) runEndSequence();
-    ctx.restore();
     requestAnimationFrame(loop);
+  }
+
+  function handleDeath() {
+    if (hasShield) {
+      hasShield = false;
+      pipes = []; // Clear obstacles to give a second chance
+    } else {
+      gameOver = true;
+    }
   }
 
   function runEndSequence() {
@@ -186,10 +173,12 @@
       setTimeout(() => { showScoreboard = true; }, 3000);
     }
     if (showScoreboard) {
-      ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(50, 150, 260, 200);
-      ctx.fillStyle = "white"; ctx.textAlign="center"; ctx.fillText(gameWon?"VICTORY":"DIED", 180, 220);
+      memeImg.style.display = "none";
+      ctx.fillStyle = "rgba(0,0,0,0.9)"; ctx.fillRect(40,100,280,300);
+      ctx.fillStyle = "white"; ctx.textAlign="center"; ctx.fillText(gameWon?"WINNER":"GAME OVER", 180, 200);
     }
   }
+
   loop();
 </script>
 </body>
