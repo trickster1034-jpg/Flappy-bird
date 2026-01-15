@@ -117,8 +117,8 @@
         }
         if (p.x < birdX && !p.p) {
           score++; p.p = true;
-          if (score === 10) { gamePhase = 2; pipes = []; birdY = 425; }
-          if (score >= 20) gameWon = true;
+          if (score === 20) { gamePhase = 2; pipes = []; birdY = 425; }
+          if (score >= 40) gameWon = true;
         }
       });
       pipes = pipes.filter(p => p.x > -100);
