@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino - Turbo Edition</title>
+  <title>Flappy Dino - Negative Turbo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -65,18 +65,25 @@
   window.addEventListener("mousedown", doTap);
 
   function loop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    // --- BACKGROUND COLOR LOGIC ---
     if (gamePhase === 1) {
-        // --- EXPONENTIAL TURBO SPEED ---
         if (score < 15) {
-            speedMult = 1 + (score * 0.06); 
+            ctx.fillStyle = "#70c5ce"; // Normal Sky Blue
+            speedMult = 1 + (score * 0.06);
         } else {
-            // Turbo boost: Ramps up heavily for the last 5 points
-            speedMult = 1.9 + ((score - 15) * 0.25); 
+            // TURBO PHASE: Negative Flicker Effect
+            speedMult = 1.9 + ((score - 15) * 0.25);
+            // Flickers between inverted colors
+            ctx.fillStyle = (Math.floor(frame / 5) % 2 === 0) ? "#8f3a31" : "#111"; 
         }
-        
-        if (gameStarted && !gameOver && frame % 60 === 0 && frame > 0) {
+    } else {
+        ctx.fillStyle = "#70c5ce"; // Reset for Dino phase
+        speedMult = 1.35;
+    }
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (gamePhase === 1 && gameStarted && !gameOver) {
+        if (frame % 60 === 0 && frame > 0) {
             score++;
             if (score === 20) { 
                 gamePhase = 2; 
@@ -84,15 +91,20 @@
                 birdY = 425; 
             }
         }
-    } else {
-        speedMult = 1.35; // Steady for Dino Phase
     }
 
     if (bgImg.complete && bgImg.width > 0) {
+      // Apply negative filter to background image during turbo
+      if (gamePhase === 1 && score >= 15) {
+          ctx.filter = "invert(100%)";
+      } else {
+          ctx.filter = "none";
+      }
       if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.5 * speedMult : 1.5);
       if (bgX <= -360) bgX = 0;
       ctx.drawImage(bgImg, bgX, 0, 360, 500);
       ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
+      ctx.filter = "none"; // Reset filter for other elements
     }
 
     if (!gameStarted) {
@@ -124,7 +136,6 @@
 
       pipes.forEach(p => {
         p.x -= (gamePhase === 1 ? 1.8 * speedMult : 2.8);
-        
         if (p.type === 'f') {
           if (birdX + 15 > p.x + 22 && birdX - 15 < p.x + 78) {
             if (birdY - 12 < p.top || birdY + 12 > p.bot) gameOver = true;
@@ -144,6 +155,7 @@
     }
 
     pipes.forEach(p => {
+      if (gamePhase === 1 && score >= 15) ctx.filter = "invert(100%) hue-rotate(180deg)";
       if (pipeImg.complete && pipeImg.width > 0) {
         if (p.type === 'f') {
           ctx.save(); ctx.translate(p.x+(VISUAL_WIDTH/2), p.top); ctx.scale(1,-1);
@@ -155,9 +167,9 @@
         if (p.type === 'f') { ctx.fillRect(p.x,0,VISUAL_WIDTH,p.top); ctx.fillRect(p.x,p.bot,VISUAL_WIDTH,500-p.bot); }
         else ctx.fillRect(p.x, p.top, VISUAL_WIDTH, 460-p.top);
       }
+      ctx.filter = "none";
     });
 
-    // Warning text blinks faster during the turbo phase
     if (gamePhase === 1 && score >= 18) {
         let blinkRate = score === 19 ? 8 : 15;
         if (Math.floor(frame / blinkRate) % 2 === 0) {
@@ -173,10 +185,6 @@
 
     ctx.save(); ctx.translate(birdX, birdY);
     if (gamePhase === 1) ctx.rotate(birdV * 0.1);
-    if (effectT > 0) {
-      ctx.font = "30px Arial"; ctx.fillText(tapCount >= 4 ? "🔥" : "💨", -50, 10);
-      effectT--;
-    }
     if (birdImg.complete && birdImg.width > 0) ctx.drawImage(birdImg, -25, -25, 50, 50);
     else { ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); }
     ctx.restore();
