@@ -5,8 +5,8 @@
   <title>Flappy Dino: Ultimate Boss Edition</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
-    body { margin: 0; background: #111; overflow: hidden; font-family: 'Arial', sans-serif; -webkit-tap-highlight-color: transparent; }
-    #game-container { position: relative; width: 360px; height: 500px; margin: auto; border: 2px solid #333; }
+    body { margin: 0; background: #111; overflow: hidden; font-family: 'Arial', sans-serif; -webkit-tap-highlight-color: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    #game-container { position: relative; width: 360px; height: 500px; border: 4px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
     canvas { background: #70c5ce; display: block; touch-action: none; }
     #meme-overlay { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 260px; display: none; border-radius: 10px; z-index: 10; }
   </style>
@@ -23,10 +23,22 @@
   const ctx = canvas.getContext("2d");
   const memeImg = document.getElementById("meme-overlay");
 
-  // Assets
-  const img = { bird: new Image(), bg: new Image(), pipe: new Image(), meteor: new Image(), girl: new Image(), arrow: new Image() };
-  img.bird.src = "bird.png"; img.bg.src = "bg.png"; img.pipe.src = "pipe.png";
-  img.meteor.src = "meteor.png"; img.girl.src = "girl.png"; img.arrow.src = "arrow.png";
+  // --- IMAGE OPTIMIZATION ---
+  const img = { 
+    bird: new Image(), bg: new Image(), pipe: new Image(), 
+    meteor: new Image(), girl: new Image(), arrow: new Image(),
+    heart: new Image(), shield: new Image()
+  };
+
+  // Ensure these filenames match your folder EXACTLY (case-sensitive!)
+  img.bird.src   = "bird.png";
+  img.bg.src     = "bg.png";
+  img.pipe.src   = "pipe.png";
+  img.meteor.src = "meteor.png";
+  img.girl.src   = "girl.png";
+  img.arrow.src  = "arrow.png";
+  img.heart.src  = "heart.png";
+  img.shield.src = "shield.png";
 
   // Game State
   let birdX = 50, birdY = 250, birdV = 0, hp = 200, score = 0, frame = 0, bgX = 0;
@@ -34,10 +46,10 @@
   let gameStarted = false, gameOver = false, gameWon = false, gamePhase = 1;
   let girlY = 100, girlDir = 1, hasShield = false, endTriggered = false, showScoreboard = false;
   
-  // Visual Effects
+  // Visuals
   let shakeTime = 0, flashColor = "rgba(0,0,0,0)", flashTime = 0, shieldPulse = 0;
 
-  // Leaderboard Stats
+  // Leaderboard
   let startTime = 0, finalTime = 0;
   let bestTime = localStorage.getItem("bestTime") || "None";
   let totalWins = localStorage.getItem("totalWins") || 0;
@@ -56,7 +68,6 @@
         flashColor = "rgba(0, 200, 255, 0.3)"; flashTime = 10;
         return;
     }
-    // Damage logic
     if (hasShield && amt < 200) {
         hasShield = false;
         damageTexts.push({ x: birdX, y: birdY, val: "BLOCKED!", life: 40, col: "#0cf" });
@@ -82,7 +93,7 @@
     ctx.save();
     if (shakeTime > 0) { ctx.translate(Math.random()*10-5, Math.random()*10-5); shakeTime--; }
 
-    // BG Rendering
+    // BG Rendering Logic
     if (gamePhase === 1) ctx.fillStyle = (score < 15) ? "#70c5ce" : (Math.floor(frame/5)%2 ? "#8f3a31" : "#111");
     else ctx.fillStyle = (score >= 30) ? "#1a1a2e" : "#70c5ce";
     ctx.fillRect(0, 0, 360, 500);
@@ -94,11 +105,11 @@
         if (score >= 40) { 
             gameWon = true; 
             finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-            totalWins++; localStorage.setItem("totalWins", totalWins);
+            totalWins++; localStorage.setItem("totalWins", ++totalWins);
             if (bestTime === "None" || parseFloat(finalTime) < parseFloat(bestTime)) {
                 bestTime = finalTime; localStorage.setItem("bestTime", bestTime);
             }
-            flashColor = "white"; flashTime = 25; // FINAL EXPLOSION
+            flashColor = "white"; flashTime = 25; 
             meteors = []; arrows = []; pipes = []; hearts = []; shields = [];
         }
       }
@@ -108,7 +119,7 @@
       if (gamePhase === 1) { if (birdY > 500 || birdY < 0) gameOver = true; }
       else if (birdY > 425) { birdY = 425; birdV = 0; }
 
-      // Spawn Hazards
+      // Spawning
       if (!gameWon) {
         if (score < 30 && frame % 120 === 0) {
             if (gamePhase === 1) pipes.push({x: 360, top: Math.random()*150+50, bot: 350});
@@ -142,56 +153,95 @@
       frame++;
     }
 
-    // Drawing Hazards
+    // DRAWING SECTION
+    // Background
+    if (img.bg.complete && img.bg.width > 0) {
+        ctx.save(); if (gamePhase === 1 && score >= 15) ctx.filter = "invert(1)";
+        ctx.drawImage(img.bg, bgX, 0, 360, 500); ctx.drawImage(img.bg, bgX+360, 0, 360, 500);
+        ctx.restore();
+    }
+
     pipes.forEach(p => {
-        ctx.fillStyle = p.cactus ? "#444" : "green";
-        if (!p.cactus) { ctx.fillRect(p.x, 0, 100, p.top); ctx.fillRect(p.x, p.top+150, 100, 500); }
-        else ctx.fillRect(p.x, p.top, 100, 460-p.top);
+        if (img.pipe.complete && img.pipe.width > 0) {
+            if (!p.cactus) {
+                ctx.drawImage(img.pipe, p.x, p.top-500, 100, 500);
+                ctx.drawImage(img.pipe, p.x, p.top+150, 100, 500);
+            } else ctx.drawImage(img.pipe, p.x, p.top, 100, 460-p.top);
+        } else {
+            ctx.fillStyle = p.cactus ? "#444" : "green";
+            if (!p.cactus) { ctx.fillRect(p.x, 0, 100, p.top); ctx.fillRect(p.x, p.top+150, 100, 500); }
+            else ctx.fillRect(p.x, p.top, 100, 460-p.top);
+        }
     });
+
     meteors.forEach(m => {
-        ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.ang); ctx.fillStyle = "orange";
-        ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); ctx.restore();
+        ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.ang);
+        if (img.meteor.complete && img.meteor.width > 0) ctx.drawImage(img.meteor, -25, -25, 50, 50);
+        else { ctx.fillStyle = "orange"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); }
+        ctx.restore();
     });
-    arrows.forEach(a => { ctx.fillStyle = "white"; ctx.fillRect(a.x, a.y, 40, 4); });
-    hearts.forEach(h => { ctx.font = "24px Arial"; ctx.fillText("❤️", h.x, h.y + Math.sin(h.bob)*20); });
-    shields.forEach(s => { ctx.fillStyle = "#0cf"; ctx.beginPath(); ctx.arc(s.x, s.y + Math.cos(s.bob)*30, 15, 0, Math.PI*2); ctx.fill(); });
+
+    arrows.forEach(a => { 
+        if (img.arrow.complete && img.arrow.width > 0) ctx.drawImage(img.arrow, a.x, a.y, 40, 10);
+        else { ctx.fillStyle = "white"; ctx.fillRect(a.x, a.y, 40, 4); }
+    });
+
+    hearts.forEach(h => { 
+        let hy = h.y + Math.sin(h.bob)*20;
+        if (img.heart.complete && img.heart.width > 0) ctx.drawImage(img.heart, h.x-15, hy-15, 30, 30);
+        else { ctx.font = "24px Arial"; ctx.fillText("❤️", h.x, hy); }
+    });
+
+    shields.forEach(s => { 
+        let sy = s.y + Math.cos(s.bob)*30;
+        if (img.shield.complete && img.shield.width > 0) ctx.drawImage(img.shield, s.x-20, sy-20, 40, 40);
+        else { ctx.fillStyle = "#0cf"; ctx.beginPath(); ctx.arc(s.x, sy, 15, 0, Math.PI*2); ctx.fill(); }
+    });
+
     if (score >= 30 && !gameWon) { 
-        if (img.girl.complete) ctx.drawImage(img.girl, 280, girlY, 60, 60);
+        if (img.girl.complete && img.girl.width > 0) ctx.drawImage(img.girl, 280, girlY, 60, 60);
         else { ctx.fillStyle = "pink"; ctx.fillRect(280, girlY, 60, 60); }
     }
 
-    // Bird & Shield Bubble
+    // Bird & Effects
     ctx.save(); ctx.translate(birdX, birdY); 
-    if (img.bird.complete) ctx.drawImage(img.bird, -25, -25, 50, 50);
-    else { ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); }
+    if (img.bird.complete && img.bird.width > 0) {
+        if (gamePhase === 1) ctx.rotate(birdV * 0.1);
+        ctx.drawImage(img.bird, -25, -25, 50, 50);
+    } else {
+        ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+    }
     if (hasShield) {
         shieldPulse += 0.1; ctx.strokeStyle = `rgba(0, 204, 255, ${0.5 + Math.sin(shieldPulse)*0.3})`;
         ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI*2); ctx.stroke();
     }
-    // Head HP Bar
     if (gamePhase >= 2) {
         ctx.fillStyle = "black"; ctx.fillRect(-20, -35, 40, 6);
         ctx.fillStyle = hp > 50 ? "#0f0" : "#f00"; ctx.fillRect(-20, -35, (hp/200)*40, 6);
     }
     ctx.restore();
 
-    // UI & Text
+    // Damage Text
     damageTexts.forEach((d, i) => {
       ctx.fillStyle = d.col; ctx.font = "bold 20px Arial";
       ctx.fillText(d.val, d.x, d.y - (40 - d.life));
       d.life--; if (d.life <= 0) damageTexts.splice(i, 1);
     });
 
+    // Flash/Timer
     if (flashTime > 0) { ctx.fillStyle = flashColor; ctx.fillRect(0,0,360,500); flashTime--; }
-
     ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.fillText("Score: "+score, 20, 40);
+    
     if (gameStarted && !gameWon && !gameOver) {
         let timer = ((Date.now() - startTime) / 1000).toFixed(1);
         ctx.font = "14px Arial"; ctx.fillText("Time: " + timer + "s", 20, 65);
     }
     
-    if (gameWon) { ctx.textAlign="center"; ctx.font="bold 30px Arial"; ctx.fillText("STAGE CLEAR!", 180, 100); ctx.textAlign="left"; }
-    
+    if (!gameStarted) {
+        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,360,500);
+        ctx.fillStyle = "white"; ctx.textAlign="center"; ctx.fillText("TAP TO START", 180, 250); ctx.textAlign="left";
+    }
+
     if (gameOver || gameWon) runEndSequence();
     ctx.restore();
     requestAnimationFrame(loop);
@@ -212,7 +262,7 @@
       ctx.font = "18px Arial";
       ctx.fillText("Run Time: " + (gameWon ? finalTime + "s" : "---"), 180, 200);
       ctx.fillStyle = "#0cf"; ctx.fillText("Best Time: " + (bestTime === "None" ? "N/A" : bestTime + "s"), 180, 240);
-      ctx.fillStyle = "#ff0"; ctx.fillText("Total Victories: " + totalWins, 180, 280);
+      ctx.fillStyle = "#ff0"; ctx.fillText("Wins: " + totalWins, 180, 280);
       ctx.fillStyle = "white"; ctx.font = "14px Arial"; ctx.fillText("Tap to Restart", 180, 360);
       ctx.textAlign = "left";
     }
