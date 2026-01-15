@@ -38,8 +38,7 @@
   let pipes = [], gameStarted = false, gameOver = false, gameWon = false;
   let gamePhase = 1, showScoreboard = false, endTriggered = false, showSkip = false;
   
-  // Visual Scaling
-  const VISUAL_WIDTH = 100; // Wider pillars/cacti
+  const VISUAL_WIDTH = 100;
   let speedMult = 1;
 
   let highScore = localStorage.getItem("highScore") || 0;
@@ -68,133 +67,19 @@
   function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (gamePhase === 1) speedMult = 1 + (score * 0.08); 
-    else speedMult = 1;
+    if (gamePhase === 1) {
+        speedMult = 1 + (score * 0.08); 
+        if (gameStarted && !gameOver && frame % 60 === 0 && frame > 0) {
+            score++;
+            if (score === 10) { 
+                gamePhase = 2; 
+                pipes = []; 
+                birdY = 425; 
+            }
+        }
+    } else {
+        speedMult = 1;
+    }
 
     if (bgImg.complete && bgImg.width > 0) {
-      if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.5 * speedMult : 1.5);
-      if (bgX <= -360) bgX = 0;
-      ctx.drawImage(bgImg, bgX, 0, 360, 500);
-      ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
-    }
-
-    if (!gameStarted) {
-      ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0,0,360,500);
-      ctx.fillStyle = "white"; ctx.font = "bold 30px Arial"; ctx.textAlign="center";
-      ctx.fillText("TAP TO START", 180, 250); ctx.textAlign="left";
-      birdY = 250 + Math.sin(Date.now()/200)*10;
-    } else if (!gameOver && !gameWon) {
-      birdV += (gamePhase === 1 ? 0.22 : 0.48);
-      birdY += birdV;
-
-      if (gamePhase === 1) {
-        if (birdY > 500 || birdY < 0) gameOver = true;
-      } else {
-        if (birdY > 425) { birdY = 425; birdV = 0; }
-        ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40);
-      }
-
-      let spawnInterval = (gamePhase === 1) ? (140 / speedMult) : 115;
-      if (frame % Math.floor(spawnInterval) === 0) {
-        if (gamePhase === 1) {
-          let t = Math.random()*150 + 50;
-          pipes.push({x: 360, top: t, bot: t+190, type: 'f', p: false});
-        } else {
-          let h = Math.random()*50 + 75;
-          pipes.push({x: 360, top: 460-h, type: 'd', p: false});
-        }
-      }
-
-      pipes.forEach(p => {
-        p.x -= (gamePhase === 1 ? 1.8 * speedMult : 2.8);
-        
-        // --- REVISED HITBOX LOGIC ---
-        if (p.type === 'f') {
-          // Visual width is 100, but kill-zone is only 56px wide
-          if (birdX + 15 > p.x + 22 && birdX - 15 < p.x + 78) {
-            if (birdY - 12 < p.top || birdY + 12 > p.bot) gameOver = true;
-          }
-        } else {
-          // Visual width is 100, but kill-zone is only 36px wide (Super easy)
-          if (birdX + 10 > p.x + 32 && birdX - 10 < p.x + 68) {
-            if (birdY + 15 > p.top + 10) gameOver = true;
-          }
-        }
-
-        if (p.x < birdX && !p.p) {
-          score++; p.p = true;
-          if (score === 10) { gamePhase = 2; pipes = []; birdY = 425; }
-          if (score >= 20) gameWon = true;
-        }
-      });
-      pipes = pipes.filter(p => p.x > -150);
-      frame++;
-    }
-
-    pipes.forEach(p => {
-      if (pipeImg.complete && pipeImg.width > 0) {
-        if (p.type === 'f') {
-          ctx.save(); ctx.translate(p.x+(VISUAL_WIDTH/2), p.top); ctx.scale(1,-1);
-          ctx.drawImage(pipeImg, -(VISUAL_WIDTH/2), 0, VISUAL_WIDTH, p.top); ctx.restore();
-          ctx.drawImage(pipeImg, p.x, p.bot, VISUAL_WIDTH, 500-p.bot);
-        } else ctx.drawImage(pipeImg, p.x, p.top, VISUAL_WIDTH, 460-p.top);
-      } else {
-        ctx.fillStyle = "green";
-        if (p.type === 'f') { ctx.fillRect(p.x,0,VISUAL_WIDTH,p.top); ctx.fillRect(p.x,p.bot,VISUAL_WIDTH,500-p.bot); }
-        else ctx.fillRect(p.x, p.top, VISUAL_WIDTH, 460-p.top);
-      }
-    });
-
-    ctx.save(); ctx.translate(birdX, birdY);
-    if (gamePhase === 1) ctx.rotate(birdV * 0.1);
-    if (effectT > 0) {
-      ctx.font = "30px Arial"; ctx.fillText(tapCount >= 4 ? "🔥" : "💨", -50, 10);
-      effectT--;
-    }
-    if (birdImg.complete && birdImg.width > 0) ctx.drawImage(birdImg, -25, -25, 50, 50);
-    else { ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); }
-    ctx.restore();
-
-    ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.fillText("Score: "+score, 20, 40);
-
-    if (gameOver || gameWon) runEndSequence();
-    requestAnimationFrame(loop);
-  }
-
-  function runEndSequence() {
-    if (!endTriggered) {
-      endTriggered = true;
-      let win = score >= 20;
-      let m = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
-      let s = ["sound1.mp3","sound2.mp3","sound3.mp3","sound4.mp3","sound5.mp3"];
-      let r = Math.floor(Math.random()*5);
-      memeImg.src = win ? "win.gif" : m[r];
-      memeImg.style.display = "block";
-      endSound.src = win ? "win.mp3" : s[r];
-      endSound.load(); endSound.play().catch(()=>{});
-      deaths++; localStorage.setItem("totalDeaths", deaths);
-      if (score > highScore) { highScore = score; localStorage.setItem("highScore", highScore); }
-      setTimeout(() => { showSkip = true; }, 1500);
-      setTimeout(() => { showScoreboard = true; }, 5000);
-    }
-    if (showScoreboard) {
-      memeImg.style.display = "none";
-      ctx.fillStyle = "rgba(0,0,0,0.9)"; ctx.fillRect(40,100,280,300);
-      ctx.fillStyle = "white"; ctx.textAlign="center";
-      ctx.font = "bold 24px Arial"; ctx.fillText(score>=20?"WINNER!":"GAME OVER", 180, 150);
-      ctx.font = "18px Arial"; 
-      ctx.fillText("Score: "+score, 180, 200);
-      ctx.fillText("High Score: "+highScore, 180, 240);
-      ctx.fillText("Deaths: "+deaths, 180, 280);
-      ctx.fillStyle = "#70c5ce"; ctx.fillText("Tap to Restart", 180, 360);
-      ctx.textAlign="left";
-    } else if (showSkip) {
-      ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(130, 430, 100, 35);
-      ctx.fillStyle = "black"; ctx.font = "bold 14px Arial"; ctx.textAlign="center";
-      ctx.fillText("SKIP >>", 180, 453); ctx.textAlign="left";
-    }
-  }
-  loop();
-</script>
-</body>
-</html>
+      if (gameStarted && !gameOver && !game
