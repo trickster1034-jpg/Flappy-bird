@@ -2,20 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino: Ultimate Boss Edition</title>
+  <title>Flappy Dino: Fix Edition</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
-    body { margin: 0; background: #111; overflow: hidden; font-family: 'Arial', sans-serif; -webkit-tap-highlight-color: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    #game-container { position: relative; width: 360px; height: 500px; border: 4px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-    canvas { background: #70c5ce; display: block; touch-action: none; }
-    #meme-overlay { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 260px; display: none; border-radius: 10px; z-index: 10; }
+    body { margin: 0; background: #111; overflow: hidden; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    #game-container { position: relative; width: 360px; height: 500px; }
+    canvas { background: #70c5ce; display: block; touch-action: none; border: 2px solid #444; }
+    #meme-overlay { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 260px; display: none; z-index: 10; }
   </style>
 </head>
 <body>
 
 <div id="game-container">
   <canvas id="game" width="360" height="500"></canvas>
-  <img id="meme-overlay" src="" alt="Victory/Loss Meme">
+  <img id="meme-overlay" src="" alt="Meme">
 </div>
 
 <script>
@@ -23,66 +23,52 @@
   const ctx = canvas.getContext("2d");
   const memeImg = document.getElementById("meme-overlay");
 
-  // --- IMAGE OPTIMIZATION ---
-  const img = { 
-    bird: new Image(), bg: new Image(), pipe: new Image(), 
-    meteor: new Image(), girl: new Image(), arrow: new Image(),
-    heart: new Image(), shield: new Image()
-  };
+  // Audio setup
+  const flapSound = new Audio("flap.mp3");
+  const hitSound = new Audio("hit.mp3"); // Ensure these files exist!
 
-  // Ensure these filenames match your folder EXACTLY (case-sensitive!)
-  img.bird.src   = "bird.png";
-  img.bg.src     = "bg.png";
-  img.pipe.src   = "pipe.png";
-  img.meteor.src = "meteor.png";
-  img.girl.src   = "girl.png";
-  img.arrow.src  = "arrow.png";
-  img.heart.src  = "heart.png";
-  img.shield.src = "shield.png";
+  // Image assets
+  const img = { bird: new Image(), bg: new Image(), pipe: new Image(), meteor: new Image(), girl: new Image(), arrow: new Image(), heart: new Image(), shield: new Image() };
+  img.bird.src = "bird.png"; img.bg.src = "bg.png"; img.pipe.src = "pipe.png";
+  img.meteor.src = "meteor.png"; img.girl.src = "girl.png"; img.arrow.src = "arrow.png";
+  img.heart.src = "heart.png"; img.shield.src = "shield.png";
 
-  // Game State
+  // Game Variables
   let birdX = 50, birdY = 250, birdV = 0, hp = 200, score = 0, frame = 0, bgX = 0;
   let pipes = [], meteors = [], arrows = [], damageTexts = [], hearts = [], shields = [];
   let gameStarted = false, gameOver = false, gameWon = false, gamePhase = 1;
   let girlY = 100, girlDir = 1, hasShield = false, endTriggered = false, showScoreboard = false;
-  
-  // Visuals
-  let shakeTime = 0, flashColor = "rgba(0,0,0,0)", flashTime = 0, shieldPulse = 0;
-
-  // Leaderboard
-  let startTime = 0, finalTime = 0;
-  let bestTime = localStorage.getItem("bestTime") || "None";
-  let totalWins = localStorage.getItem("totalWins") || 0;
+  let speedMult = 2.5; // Base speed
+  let shakeTime = 0, flashColor = "rgba(0,0,0,0)", flashTime = 0;
 
   function triggerHit(amt, type = 'damage') {
     if (gameWon) return;
     if (type === 'heal') {
         hp = Math.min(200, hp + amt);
         damageTexts.push({ x: birdX, y: birdY, val: `+${amt} HP`, life: 40, col: "#0f0" });
-        flashColor = "rgba(0, 255, 0, 0.2)"; flashTime = 10;
-        return;
-    }
-    if (type === 'shield') {
-        hasShield = true;
-        damageTexts.push({ x: birdX, y: birdY, val: "SHIELDED!", life: 40, col: "#0cf" });
-        flashColor = "rgba(0, 200, 255, 0.3)"; flashTime = 10;
-        return;
-    }
-    if (hasShield && amt < 200) {
-        hasShield = false;
-        damageTexts.push({ x: birdX, y: birdY, val: "BLOCKED!", life: 40, col: "#0cf" });
-        flashColor = "rgba(255, 255, 255, 0.5)"; flashTime = 10; shakeTime = 5;
     } else {
-        hp -= amt;
-        damageTexts.push({ x: birdX, y: birdY, val: `-${amt}`, life: 40, col: "#f00" });
-        shakeTime = 15; flashColor = "rgba(255, 0, 0, 0.4)"; flashTime = 10;
+        if (hasShield && amt < 200) {
+            hasShield = false;
+            damageTexts.push({ x: birdX, y: birdY, val: "BLOCK!", life: 40, col: "#0cf" });
+        } else {
+            hp -= amt;
+            damageTexts.push({ x: birdX, y: birdY, val: `-${amt}`, life: 40, col: "#f00" });
+            shakeTime = 15; flashTime = 10; flashColor = "rgba(255,0,0,0.4)";
+        }
     }
     if (hp <= 0) { hp = 0; gameOver = true; }
   }
 
   function doTap() {
+    // Unlock Audio for browsers
+    if (flapSound.paused) flapSound.play().catch(()=>{}); 
+    
     if (gameOver || gameWon) { if (showScoreboard) location.reload(); return; }
-    if (!gameStarted) { gameStarted = true; startTime = Date.now(); return; }
+    if (!gameStarted) { gameStarted = true; return; }
+    
+    flapSound.currentTime = 0;
+    flapSound.play().catch(()=>{});
+    
     if (gamePhase === 1) birdV = -5; else if (birdY >= 425) birdV = -12;
   }
 
@@ -93,25 +79,19 @@
     ctx.save();
     if (shakeTime > 0) { ctx.translate(Math.random()*10-5, Math.random()*10-5); shakeTime--; }
 
-    // BG Rendering Logic
-    if (gamePhase === 1) ctx.fillStyle = (score < 15) ? "#70c5ce" : (Math.floor(frame/5)%2 ? "#8f3a31" : "#111");
-    else ctx.fillStyle = (score >= 30) ? "#1a1a2e" : "#70c5ce";
+    // BG Logic
+    ctx.fillStyle = (gamePhase === 1) ? "#70c5ce" : "#1a1a2e";
     ctx.fillRect(0, 0, 360, 500);
 
     if (gameStarted && !gameOver && !gameWon) {
+      frame++;
+      // Gradual Speed Increase in Phase 1
+      if (gamePhase === 1) speedMult += 0.0005; 
+
       if (frame % 60 === 0) {
         score++;
-        if (score === 20) { gamePhase = 2; birdY = 425; pipes = []; }
-        if (score >= 40) { 
-            gameWon = true; 
-            finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-            totalWins++; localStorage.setItem("totalWins", ++totalWins);
-            if (bestTime === "None" || parseFloat(finalTime) < parseFloat(bestTime)) {
-                bestTime = finalTime; localStorage.setItem("bestTime", bestTime);
-            }
-            flashColor = "white"; flashTime = 25; 
-            meteors = []; arrows = []; pipes = []; hearts = []; shields = [];
-        }
+        if (score === 20) { gamePhase = 2; birdY = 425; pipes = []; speedMult = 3.5; }
+        if (score >= 40) gameWon = true;
       }
 
       birdV += (gamePhase === 1 ? 0.22 : 0.48);
@@ -121,126 +101,77 @@
 
       // Spawning
       if (!gameWon) {
-        if (score < 30 && frame % 120 === 0) {
-            if (gamePhase === 1) pipes.push({x: 360, top: Math.random()*150+50, bot: 350});
-            else pipes.push({x: 360, top: 460-(Math.random()*50+75), cactus: true});
+        if (score < 30 && frame % 100 === 0) {
+          if (gamePhase === 1) pipes.push({x: 360, top: Math.random()*150+50, bot: 350});
+          else pipes.push({x: 360, top: 460-100, cactus: true});
         }
         if (score >= 30) {
-            girlY += 3 * girlDir; if (girlY > 350 || girlY < 50) girlDir *= -1;
-            if (frame % 55 === 0) meteors.push({x: 380, y: Math.random()*250, sX: 5, sY: 2, ang: 0});
-            if (frame % 85 === 0) arrows.push({x: 280, y: girlY + 25, sX: 7});
-            if (frame % 450 === 0) hearts.push({x: 380, y: 320, bob: 0});
-            if (frame % 700 === 0) shields.push({x: 380, y: 240, bob: 0});
+          girlY += 3 * girlDir; if (girlY > 350 || girlY < 50) girlDir *= -1;
+          if (frame % 50 === 0) meteors.push({x: 380, y: Math.random()*250, sX: 5, sY: 2, ang: 0});
+          if (frame % 80 === 0) arrows.push({x: 280, y: girlY + 25, sX: 7});
         }
       }
 
-      // Collisions
-      meteors.forEach((m, i) => { m.x -= m.sX; m.y += m.sY; m.ang += 0.1;
+      // Collisions & Movement
+      pipes.forEach(p => { 
+        p.x -= speedMult; 
+        if (p.cactus && birdX+15 > p.x+20 && birdX-15 < p.x+80 && birdY+15 > p.top) triggerHit(200);
+      });
+      meteors.forEach((m, i) => { 
+        m.x -= m.sX; m.y += m.sY; m.ang += 0.1;
         if (Math.hypot(birdX-m.x, birdY-m.y) < 30) { triggerHit(50); meteors.splice(i, 1); }
       });
-      arrows.forEach((a, i) => { a.x -= a.sX;
-        if (birdX+15 > a.x && birdX-15 < a.x+30 && Math.abs(birdY-a.y) < 15) { triggerHit(25); arrows.splice(i, 1); }
+      arrows.forEach((a, i) => { 
+        a.x -= a.sX;
+        if (birdX+15 > a.x && birdX-15 < a.x+30 && Math.abs(birdY-a.y) < 20) { triggerHit(25); arrows.splice(i, 1); }
       });
-      hearts.forEach((h, i) => { h.x -= 3; h.bob += 0.1; 
-        if (Math.hypot(birdX-h.x, birdY-(h.y + Math.sin(h.bob)*20)) < 30) { triggerHit(50, 'heal'); hearts.splice(i, 1); }
-      });
-      shields.forEach((s, i) => { s.x -= 3; s.bob += 0.1; 
-        if (Math.hypot(birdX-s.x, birdY-(s.y + Math.cos(s.bob)*30)) < 30) { triggerHit(0, 'shield'); shields.splice(i, 1); }
-      });
-      pipes.forEach(p => { p.x -= 2.5;
-        if (p.cactus && birdX+10 > p.x+30 && birdX-10 < p.x+70 && birdY+15 > p.top) triggerHit(200);
-      });
-      frame++;
     }
 
-    // DRAWING SECTION
-    // Background
-    if (img.bg.complete && img.bg.width > 0) {
-        ctx.save(); if (gamePhase === 1 && score >= 15) ctx.filter = "invert(1)";
-        ctx.drawImage(img.bg, bgX, 0, 360, 500); ctx.drawImage(img.bg, bgX+360, 0, 360, 500);
-        ctx.restore();
-    }
-
+    // DRAWING (With Scaling Fixes)
     pipes.forEach(p => {
-        if (img.pipe.complete && img.pipe.width > 0) {
-            if (!p.cactus) {
-                ctx.drawImage(img.pipe, p.x, p.top-500, 100, 500);
-                ctx.drawImage(img.pipe, p.x, p.top+150, 100, 500);
-            } else ctx.drawImage(img.pipe, p.x, p.top, 100, 460-p.top);
+      if (img.pipe.complete && img.pipe.width > 0) {
+        if (!p.cactus) {
+          // Draw Top Pipe (Upside Down)
+          ctx.save(); ctx.translate(p.x + 50, p.top); ctx.scale(1, -1);
+          ctx.drawImage(img.pipe, 0, 0, img.pipe.width, img.pipe.height, -50, 0, 100, p.top);
+          ctx.restore();
+          // Draw Bottom Pipe
+          ctx.drawImage(img.pipe, 0, 0, img.pipe.width, img.pipe.height, p.x, p.top + 150, 100, 500);
         } else {
-            ctx.fillStyle = p.cactus ? "#444" : "green";
-            if (!p.cactus) { ctx.fillRect(p.x, 0, 100, p.top); ctx.fillRect(p.x, p.top+150, 100, 500); }
-            else ctx.fillRect(p.x, p.top, 100, 460-p.top);
+          ctx.drawImage(img.pipe, 0, 0, img.pipe.width, img.pipe.height, p.x, p.top, 100, 460-p.top);
         }
+      }
     });
+
+    if (score >= 30 && !gameWon) {
+      if (img.girl.complete) ctx.drawImage(img.girl, 0, 0, img.girl.width, img.girl.height, 280, girlY, 60, 60);
+    }
 
     meteors.forEach(m => {
-        ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.ang);
-        if (img.meteor.complete && img.meteor.width > 0) ctx.drawImage(img.meteor, -25, -25, 50, 50);
-        else { ctx.fillStyle = "orange"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); }
-        ctx.restore();
+      ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.ang);
+      if (img.meteor.complete) ctx.drawImage(img.meteor, -25, -25, 50, 50);
+      ctx.restore();
     });
 
-    arrows.forEach(a => { 
-        if (img.arrow.complete && img.arrow.width > 0) ctx.drawImage(img.arrow, a.x, a.y, 40, 10);
-        else { ctx.fillStyle = "white"; ctx.fillRect(a.x, a.y, 40, 4); }
-    });
+    arrows.forEach(a => { if (img.arrow.complete) ctx.drawImage(img.arrow, a.x, a.y, 40, 15); });
 
-    hearts.forEach(h => { 
-        let hy = h.y + Math.sin(h.bob)*20;
-        if (img.heart.complete && img.heart.width > 0) ctx.drawImage(img.heart, h.x-15, hy-15, 30, 30);
-        else { ctx.font = "24px Arial"; ctx.fillText("❤️", h.x, hy); }
-    });
-
-    shields.forEach(s => { 
-        let sy = s.y + Math.cos(s.bob)*30;
-        if (img.shield.complete && img.shield.width > 0) ctx.drawImage(img.shield, s.x-20, sy-20, 40, 40);
-        else { ctx.fillStyle = "#0cf"; ctx.beginPath(); ctx.arc(s.x, sy, 15, 0, Math.PI*2); ctx.fill(); }
-    });
-
-    if (score >= 30 && !gameWon) { 
-        if (img.girl.complete && img.girl.width > 0) ctx.drawImage(img.girl, 280, girlY, 60, 60);
-        else { ctx.fillStyle = "pink"; ctx.fillRect(280, girlY, 60, 60); }
-    }
-
-    // Bird & Effects
-    ctx.save(); ctx.translate(birdX, birdY); 
-    if (img.bird.complete && img.bird.width > 0) {
-        if (gamePhase === 1) ctx.rotate(birdV * 0.1);
-        ctx.drawImage(img.bird, -25, -25, 50, 50);
-    } else {
-        ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
-    }
+    // Dino
+    ctx.save(); ctx.translate(birdX, birdY);
+    if (img.bird.complete) ctx.drawImage(img.bird, -25, -25, 50, 50);
     if (hasShield) {
-        shieldPulse += 0.1; ctx.strokeStyle = `rgba(0, 204, 255, ${0.5 + Math.sin(shieldPulse)*0.3})`;
-        ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI*2); ctx.stroke();
-    }
-    if (gamePhase >= 2) {
-        ctx.fillStyle = "black"; ctx.fillRect(-20, -35, 40, 6);
-        ctx.fillStyle = hp > 50 ? "#0f0" : "#f00"; ctx.fillRect(-20, -35, (hp/200)*40, 6);
+      ctx.strokeStyle = "#0cf"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0,0,32,0,Math.PI*2); ctx.stroke();
     }
     ctx.restore();
 
-    // Damage Text
+    // Damage Text & Flash
     damageTexts.forEach((d, i) => {
-      ctx.fillStyle = d.col; ctx.font = "bold 20px Arial";
-      ctx.fillText(d.val, d.x, d.y - (40 - d.life));
+      ctx.fillStyle = d.col; ctx.font = "bold 20px Arial"; ctx.fillText(d.val, d.x, d.y - (40 - d.life));
       d.life--; if (d.life <= 0) damageTexts.splice(i, 1);
     });
-
-    // Flash/Timer
     if (flashTime > 0) { ctx.fillStyle = flashColor; ctx.fillRect(0,0,360,500); flashTime--; }
+
     ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.fillText("Score: "+score, 20, 40);
-    
-    if (gameStarted && !gameWon && !gameOver) {
-        let timer = ((Date.now() - startTime) / 1000).toFixed(1);
-        ctx.font = "14px Arial"; ctx.fillText("Time: " + timer + "s", 20, 65);
-    }
-    
-    if (!gameStarted) {
-        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,360,500);
-        ctx.fillStyle = "white"; ctx.textAlign="center"; ctx.fillText("TAP TO START", 180, 250); ctx.textAlign="left";
-    }
+    if (!gameStarted) { ctx.fillStyle = "white"; ctx.textAlign="center"; ctx.fillText("CLICK TO START", 180, 250); ctx.textAlign="left"; }
 
     if (gameOver || gameWon) runEndSequence();
     ctx.restore();
@@ -255,16 +186,8 @@
       setTimeout(() => { showScoreboard = true; }, 3000);
     }
     if (showScoreboard) {
-      memeImg.style.display = "none";
-      ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(40, 100, 280, 300);
-      ctx.fillStyle = "white"; ctx.textAlign = "center";
-      ctx.font = "bold 26px Arial"; ctx.fillText(gameWon ? "VICTORY!" : "DIED", 180, 150);
-      ctx.font = "18px Arial";
-      ctx.fillText("Run Time: " + (gameWon ? finalTime + "s" : "---"), 180, 200);
-      ctx.fillStyle = "#0cf"; ctx.fillText("Best Time: " + (bestTime === "None" ? "N/A" : bestTime + "s"), 180, 240);
-      ctx.fillStyle = "#ff0"; ctx.fillText("Wins: " + totalWins, 180, 280);
-      ctx.fillStyle = "white"; ctx.font = "14px Arial"; ctx.fillText("Tap to Restart", 180, 360);
-      ctx.textAlign = "left";
+      ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(50, 150, 260, 200);
+      ctx.fillStyle = "white"; ctx.textAlign="center"; ctx.fillText(gameWon?"VICTORY":"DIED", 180, 220);
     }
   }
   loop();
