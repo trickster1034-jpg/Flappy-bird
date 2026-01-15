@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino - Optimized</title>
+  <title>Flappy Dino - No Glitch Edition</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; }
     #game-container { position: relative; width: 360px; height: 500px; margin: auto; }
-    canvas { background: #70c5ce; display: block; touch-action: none; transition: filter 0.3s ease; }
+    canvas { background: #70c5ce; display: block; touch-action: none; transition: filter 0.4s ease; }
     #meme-overlay { 
       position: absolute; top: 100px; left: 50%; transform: translateX(-50%); 
       width: 260px; display: none; border-radius: 10px; z-index: 10;
@@ -40,7 +40,7 @@
   
   let highScore = localStorage.getItem("highScore") || 0;
   let deaths = localStorage.getItem("totalDeaths") || 0;
-  let lastTap = 0, tapCount = 0, shakeTime = 0;
+  let shakeTime = 0;
 
   function doTap() {
     if (gameOver || gameWon) {
@@ -51,8 +51,8 @@
     if (!gameStarted) { gameStarted = true; return; }
     flapSound.currentTime = 0; flapSound.play().catch(()=>{});
     
-    // Jump Strength
-    birdV = (gamePhase === 1) ? -5.5 : -10;
+    if (gamePhase === 1) birdV = -5.5;
+    else if (birdY >= 420) birdV = -11;
   }
 
   window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
@@ -63,11 +63,11 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (shakeTime > 0) {
-      ctx.translate(Math.random() * 8 - 4, Math.random() * 8 - 4);
+      ctx.translate(Math.random() * 6 - 3, Math.random() * 6 - 3);
       shakeTime--;
     }
 
-    // Visual Surge
+    // Filter Logic
     if (gamePhase === 1 && score >= 15) {
         canvas.style.filter = "invert(1) hue-rotate(180deg)";
     } else {
@@ -76,7 +76,7 @@
 
     // BG Scroll
     if (bgImg.complete && bgImg.width > 0) {
-      if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 1 : 2);
+      if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 1 : 2.5);
       if (bgX <= -360) bgX = 0;
       ctx.drawImage(bgImg, bgX, 0, 360, 500);
       ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
@@ -84,78 +84,78 @@
 
     if (!gameStarted) {
       ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0,0,360,500);
-      ctx.fillStyle = "white"; ctx.font = "bold 30px Arial"; ctx.textAlign="center";
+      ctx.fillStyle = "white"; ctx.font = "bold 25px Arial"; ctx.textAlign="center";
       ctx.fillText("TAP TO START", 180, 250);
       birdY = 250 + Math.sin(Date.now()/200)*10;
     } else if (!gameOver && !gameWon) {
       
       frame++;
-      // Score by Time (Phase 1)
       if (frame % 60 === 0 && gamePhase === 1) {
         score++;
         if (score === 20) { gamePhase = 2; pipes = []; birdY = 425; birdV = 0; }
       }
 
-      // Consistent Gravity
-      birdV += (gamePhase === 1 ? 0.25 : 0.5);
+      // Physics
+      birdV += (gamePhase === 1 ? 0.28 : 0.45);
+      if (birdV > 10) birdV = 10; // Terminal velocity cap
       birdY += birdV;
 
-      // Boundaries
       if (gamePhase === 1) {
-        if (birdY > 480 || birdY < 0) { gameOver = true; shakeTime = 20; }
+        if (birdY > 500 || birdY < 0) { gameOver = true; shakeTime = 15; }
       } else {
         if (birdY > 425) { birdY = 425; birdV = 0; }
-        ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40); // Ground
+        ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40);
       }
 
-      // Optimized Spawn Rate
-      let speedFactor = (gamePhase === 1 && score >= 15) ? 2.5 : 1.8;
-      let spawnInterval = (gamePhase === 1) ? (score >= 15 ? 50 : 100) : 90;
+      // Spawning
+      let moveSpeed = (gamePhase === 1 && score >= 15) ? 3.8 : 2.2;
+      let spawnRate = (gamePhase === 1) ? (score >= 15 ? 40 : 85) : 75;
 
-      if (frame % spawnInterval === 0) {
+      if (frame > 30 && frame % spawnRate === 0) {
         if (gamePhase === 1) {
-          let gap = 160;
-          let t = Math.random() * (300 - 100) + 50;
-          pipes.push({x: 360, top: t, bot: t + gap, type: 'f', passed: false});
+          let gap = 150;
+          let t = Math.random() * (300 - 50) + 50;
+          pipes.push({x: 360, top: t, bot: t + gap, passed: false, type: 'f'});
         } else {
-          let h = Math.random() * 40 + 60;
-          pipes.push({x: 360, top: 460 - h, type: 'd', passed: false});
+          let h = Math.random() * 40 + 50;
+          pipes.push({x: 360, top: 460 - h, passed: false, type: 'd'});
         }
       }
 
-      // Meteors
-      if (gamePhase === 2 && score >= 30 && frame % 120 === 0) {
-          meteors.push({ x: 400, y: -20 });
+      if (gamePhase === 2 && score >= 30 && frame % 110 === 0) {
+          meteors.push({ x: 380, y: -40 });
       }
 
       // Logic: Pipes
       pipes.forEach(p => {
-        p.x -= speedFactor;
-        // Tighter Hitbox (10 instead of 15)
-        if (birdX + 10 > p.x && birdX - 10 < p.x + 60) {
+        p.x -= moveSpeed;
+        // Strict Hitbox Tuning
+        let birdHitW = 12; 
+        let birdHitH = 12;
+        
+        if (birdX + birdHitW > p.x && birdX - birdHitW < p.x + 60) {
           if (gamePhase === 1) {
-            if (birdY - 10 < p.top || birdY + 10 > p.bot) { gameOver = true; shakeTime = 20; }
+            if (birdY - birdHitH < p.top || birdY + birdHitH > p.bot) { gameOver = true; shakeTime = 15; }
           } else {
-            // Cactus is 200 damage (Instant)
-            if (birdY + 15 > p.top) { hp = 0; gameOver = true; shakeTime = 25; }
+            if (birdY + birdHitH > p.top) { hp = 0; gameOver = true; shakeTime = 25; }
           }
         }
-        if (gamePhase === 2 && !p.passed && p.x + 60 < birdX) {
+        if (gamePhase === 2 && !p.passed && p.x + 30 < birdX) {
             score++; p.passed = true;
             if (score >= 40) gameWon = true;
         }
       });
 
       // Logic: Meteors
-      meteors.forEach((m, i) => {
+      meteors.forEach((m, idx) => {
           m.x -= 4; m.y += 3.5;
-          if (Math.hypot(birdX - m.x, birdY - m.y) < 25) {
-              hp -= 50; shakeTime = 15; meteors.splice(i, 1);
+          if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
+              hp -= 50; shakeTime = 15; meteors.splice(idx, 1);
               if (hp <= 0) { hp = 0; gameOver = true; }
           }
       });
 
-      pipes = pipes.filter(p => p.x > -80);
+      pipes = pipes.filter(p => p.x > -100);
       meteors = meteors.filter(m => m.y < 520);
     }
 
@@ -164,10 +164,10 @@
       if (pipeImg.complete) {
         if (p.type === 'f') {
           ctx.save(); ctx.translate(p.x+30, p.top); ctx.scale(1,-1);
-          ctx.drawImage(pipeImg, -40, 0, 80, p.top); ctx.restore();
-          ctx.drawImage(pipeImg, p.x, p.bot, 80, 500-p.bot);
+          ctx.drawImage(pipeImg, -30, 0, 60, p.top); ctx.restore();
+          ctx.drawImage(pipeImg, p.x, p.bot, 60, 500-p.bot);
         } else {
-          ctx.drawImage(pipeImg, p.x, p.top, 80, 460-p.top);
+          ctx.drawImage(pipeImg, p.x, p.top, 60, 460-p.top);
         }
       }
     });
@@ -178,9 +178,9 @@
     });
 
     if (gamePhase === 2 && !gameOver) {
-        ctx.fillStyle = "black"; ctx.fillRect(100, 15, 160, 15);
+        ctx.fillStyle = "black"; ctx.fillRect(100, 15, 160, 12);
         ctx.fillStyle = hp > 60 ? "#2ecc71" : "#e74c3c";
-        ctx.fillRect(100, 15, (hp / 200) * 160, 15);
+        ctx.fillRect(100, 15, (hp/200)*160, 12);
     }
 
     ctx.save(); ctx.translate(birdX, birdY);
