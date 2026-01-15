@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino - Surge & Shake</title>
+  <title>Flappy Dino - Surge Edition</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; }
     #game-container { position: relative; width: 360px; height: 500px; margin: auto; }
-    canvas { background: #70c5ce; display: block; touch-action: none; transition: filter 0.3s ease; }
+    canvas { background: #70c5ce; display: block; touch-action: none; transition: filter 0.3s; }
     #meme-overlay { 
       position: absolute; top: 100px; left: 50%; transform: translateX(-50%); 
       width: 260px; display: none; border-radius: 10px; z-index: 10;
@@ -41,7 +41,6 @@
   let highScore = localStorage.getItem("highScore") || 0;
   let deaths = localStorage.getItem("totalDeaths") || 0;
   let lastTap = 0, tapCount = 0, effectT = 0;
-  let shakeTime = 0;
 
   function doTap() {
     if (gameOver || gameWon) {
@@ -66,23 +65,15 @@
   window.addEventListener("mousedown", doTap);
 
   function loop() {
-    ctx.save(); // Save for shake effect
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Shake Logic
-    if (shakeTime > 0) {
-      ctx.translate(Math.random() * 10 - 5, Math.random() * 10 - 5);
-      shakeTime--;
-    }
-
-    // 2. Inversion Logic
+    // BACKGROUND INVERSION LOGIC
     if (gamePhase === 1 && score >= 15) {
         canvas.style.filter = "invert(1) hue-rotate(180deg)";
     } else {
-        canvas.style.filter = "invert(0)";
+        canvas.style.filter = "invert(0) hue-rotate(0deg)";
     }
 
-    // Background
     if (bgImg.complete && bgImg.width > 0) {
       if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.5 : 1.5);
       if (bgX <= -360) bgX = 0;
@@ -97,7 +88,6 @@
       birdY = 250 + Math.sin(Date.now()/200)*10;
     } else if (!gameOver && !gameWon) {
       
-      // 3. Time Based Scoring
       frame++;
       if (frame % 60 === 0) {
         score++;
@@ -105,7 +95,6 @@
         if (score >= 40) gameWon = true;
       }
 
-      // 4. Gradual Speed + Surge
       let speedFactor = 1;
       if (gamePhase === 1) {
         speedFactor = 1 + (score * 0.05); 
@@ -116,13 +105,12 @@
       birdY += birdV;
 
       if (gamePhase === 1) {
-        if (birdY > 500 || birdY < 0) { gameOver = true; shakeTime = 15; }
+        if (birdY > 500 || birdY < 0) gameOver = true;
       } else {
         if (birdY > 425) { birdY = 425; birdV = 0; }
         ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40);
       }
 
-      // 5. Spawning
       let spawnRate = (gamePhase === 1) ? 140 : 115;
       if (gamePhase === 1 && score >= 15) spawnRate = 70; 
 
@@ -140,50 +128,44 @@
         p.x -= (gamePhase === 1 ? (1.8 * speedFactor) : 2.8);
         if (birdX + 15 > p.x + 18 && birdX - 15 < p.x + 62) {
           if (p.type === 'f') {
-            if (birdY - 12 < p.top || birdY + 12 > p.bot) { gameOver = true; shakeTime = 15; }
-          } else if (birdY + 15 > p.top + 10) { gameOver = true; shakeTime = 15; }
+            if (birdY - 12 < p.top || birdY + 12 > p.bot) gameOver = true;
+          } else if (birdY + 15 > p.top + 10) gameOver = true;
         }
       });
       pipes = pipes.filter(p => p.x > -100);
     }
 
-    // Drawing Pipes (Correct Scaling)
     pipes.forEach(p => {
       if (pipeImg.complete && pipeImg.width > 0) {
         if (p.type === 'f') {
           ctx.save(); ctx.translate(p.x+40, p.top); ctx.scale(1,-1);
-          ctx.drawImage(pipeImg, 0, 0, pipeImg.width, pipeImg.height, -40, 0, 80, p.top); ctx.restore();
-          ctx.drawImage(pipeImg, 0, 0, pipeImg.width, pipeImg.height, p.x, p.bot, 80, 500-p.bot);
-        } else {
-          ctx.drawImage(pipeImg, 0, 0, pipeImg.width, pipeImg.height, p.x, p.top, 80, 460-p.top);
-        }
+          ctx.drawImage(pipeImg, -40, 0, 80, p.top); ctx.restore();
+          ctx.drawImage(pipeImg, p.x, p.bot, 80, 500-p.bot);
+        } else ctx.drawImage(pipeImg, p.x, p.top, 80, 460-p.top);
+      } else {
+        ctx.fillStyle = "green";
+        if (p.type === 'f') { ctx.fillRect(p.x,0,80,p.top); ctx.fillRect(p.x,p.bot,80,500-p.bot); }
+        else ctx.fillRect(p.x, p.top, 80, 460-p.top);
       }
     });
 
-    // Drawing Bird
     ctx.save(); ctx.translate(birdX, birdY);
     if (gamePhase === 1) ctx.rotate(birdV * 0.1);
     if (effectT > 0) {
       ctx.font = "30px Arial"; ctx.fillText(tapCount >= 4 ? "🔥" : "💨", -50, 10);
       effectT--;
     }
-    if (birdImg.complete && birdImg.width > 0) {
-        ctx.drawImage(birdImg, -25, -25, 50, 50);
-    } else {
-        ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
-    }
+    if (birdImg.complete && birdImg.width > 0) ctx.drawImage(birdImg, -25, -25, 50, 50);
+    else { ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); }
     ctx.restore();
 
     ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.fillText("Score: "+score, 20, 40);
-    
     if (gameOver || gameWon) runEndSequence();
-    
-    ctx.restore(); // Restore from shake
     requestAnimationFrame(loop);
   }
 
   function runEndSequence() {
-    canvas.style.filter = "invert(0)";
+    canvas.style.filter = "invert(0)"; // Reset colors on death
     if (!endTriggered) {
       endTriggered = true;
       let win = score >= 40;
