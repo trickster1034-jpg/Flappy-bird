@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino - Skill Scoring</title>
+  <title>Flappy Dino - Meteor Jump</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; }
@@ -52,7 +52,7 @@
     flapSound.currentTime = 0; flapSound.play().catch(()=>{});
     
     if (gamePhase === 1) birdV = -5.2;
-    else if (birdY >= 420) birdV = -10.5;
+    else if (birdY >= 420) birdV = -10.5; // Dino Jump
   }
 
   window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
@@ -88,7 +88,6 @@
     } else if (!gameOver && !gameWon) {
       
       frame++;
-      // PHASE 1: Score by Time (Stops at 20)
       if (frame % 60 === 0 && gamePhase === 1) {
         score++;
         if (score === 20) { gamePhase = 2; pipes = []; birdY = 425; birdV = 0; }
@@ -105,7 +104,7 @@
       }
 
       let moveSpeed = (gamePhase === 1 && score >= 15) ? 3.8 : 2.2;
-      let spawnRate = (gamePhase === 1) ? (score >= 15 ? 45 : 90) : 80;
+      let spawnRate = (gamePhase === 1) ? (score >= 15 ? 70 : 130) : 80;
 
       if (frame > 20 && frame % spawnRate === 0) {
         if (gamePhase === 1) {
@@ -117,13 +116,13 @@
         }
       }
 
-      if (gamePhase === 2 && score >= 30 && frame % 110 === 0) {
-          meteors.push({ x: 380, y: -40 });
+      // METEORS: Aimed low so Dino can jump over them
+      if (gamePhase === 2 && score >= 30 && frame % 140 === 0) {
+          meteors.push({ x: 380, y: 350 }); 
       }
 
       pipes.forEach(p => {
         p.x -= moveSpeed;
-        
         let birdR = 12; 
         let pipeW = 60;
 
@@ -131,10 +130,8 @@
           if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY - birdR < p.top) { gameOver = true; shakeTime = 15; }
           if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.bot) { gameOver = true; shakeTime = 15; }
         } else {
-          // PHASE 2 Collision
           if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.top) { hp = 0; gameOver = true; shakeTime = 25; }
           
-          // PHASE 2 Scoring (Jump over Cactus)
           if (!p.passed && p.x + pipeW < birdX) {
               score++; 
               p.passed = true;
@@ -144,7 +141,10 @@
       });
 
       meteors.forEach((m, idx) => {
-          m.x -= 4; m.y += 3.5;
+          m.x -= 4.0; // Horizontal movement
+          m.y += 0.8; // Shallow diagonal fall towards Dino's legs
+          
+          // Collision Check
           if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
               hp -= 50; shakeTime = 15; meteors.splice(idx, 1);
               if (hp <= 0) { hp = 0; gameOver = true; }
@@ -155,6 +155,7 @@
       meteors = meteors.filter(m => m.y < 520);
     }
 
+    // DRAWING
     pipes.forEach(p => {
       if (pipeImg.complete) {
         if (p.type === 'f') {
