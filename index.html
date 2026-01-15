@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino - Meteor Jump</title>
+  <title>Flappy Dino - Pro Spacing</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; }
     #game-container { position: relative; width: 360px; height: 500px; margin: auto; }
-    canvas { background: #70c5ce; display: block; touch-action: none; transition: filter 0.3s ease; }
+    canvas { background: #70c5ce; display: block; touch-action: none; transition: filter 0.4s ease; }
     #meme-overlay { 
       position: absolute; top: 100px; left: 50%; transform: translateX(-50%); 
       width: 260px; display: none; border-radius: 10px; z-index: 10;
@@ -52,7 +52,7 @@
     flapSound.currentTime = 0; flapSound.play().catch(()=>{});
     
     if (gamePhase === 1) birdV = -5.2;
-    else if (birdY >= 420) birdV = -10.5; // Dino Jump
+    else if (birdY >= 420) birdV = -10.5;
   }
 
   window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
@@ -104,7 +104,9 @@
       }
 
       let moveSpeed = (gamePhase === 1 && score >= 15) ? 3.8 : 2.2;
-      let spawnRate = (gamePhase === 1) ? (score >= 15 ? 70 : 130) : 80;
+      
+      // MUCH LARGER DISTANCE: spawnRate increased to 180 for Phase 1
+      let spawnRate = (gamePhase === 1) ? (score >= 15 ? 100 : 180) : 100;
 
       if (frame > 20 && frame % spawnRate === 0) {
         if (gamePhase === 1) {
@@ -116,9 +118,8 @@
         }
       }
 
-      // METEORS: Aimed low so Dino can jump over them
-      if (gamePhase === 2 && score >= 30 && frame % 140 === 0) {
-          meteors.push({ x: 380, y: 350 }); 
+      if (gamePhase === 2 && score >= 30 && frame % 150 === 0) {
+          meteors.push({ x: 380, y: 340 }); 
       }
 
       pipes.forEach(p => {
@@ -131,20 +132,16 @@
           if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.bot) { gameOver = true; shakeTime = 15; }
         } else {
           if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.top) { hp = 0; gameOver = true; shakeTime = 25; }
-          
           if (!p.passed && p.x + pipeW < birdX) {
-              score++; 
-              p.passed = true;
+              score++; p.passed = true;
               if (score >= 40) gameWon = true;
           }
         }
       });
 
       meteors.forEach((m, idx) => {
-          m.x -= 4.0; // Horizontal movement
-          m.y += 0.8; // Shallow diagonal fall towards Dino's legs
-          
-          // Collision Check
+          m.x -= 4.2; 
+          m.y += 0.7; // Slanted towards the ground
           if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
               hp -= 50; shakeTime = 15; meteors.splice(idx, 1);
               if (hp <= 0) { hp = 0; gameOver = true; }
@@ -155,7 +152,6 @@
       meteors = meteors.filter(m => m.y < 520);
     }
 
-    // DRAWING
     pipes.forEach(p => {
       if (pipeImg.complete) {
         if (p.type === 'f') {
