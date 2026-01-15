@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino</title>
+  <title>Flappy Dino - Ultimate Edition</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; }
@@ -44,17 +44,10 @@
 
   function doTap() {
     if (gameOver || gameWon) {
-      // If scoreboard is showing, click to restart
-      if (showScoreboard) {
-          location.reload();
-      } 
-      // If meme is playing but skip is ready, click to show scoreboard
-      else if (showSkip) {
-          showScoreboard = true;
-      }
+      if (showScoreboard) location.reload(); 
+      else if (showSkip) showScoreboard = true;
       return;
     }
-    
     if (!gameStarted) { gameStarted = true; return; }
 
     flapSound.currentTime = 0; flapSound.play().catch(()=>{});
@@ -74,6 +67,7 @@
   function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Background logic
     if (bgImg.complete && bgImg.width > 0) {
       if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.5 : 1.5);
       if (bgX <= -360) bgX = 0;
@@ -87,7 +81,24 @@
       ctx.fillText("TAP TO START", 180, 250); ctx.textAlign="left";
       birdY = 250 + Math.sin(Date.now()/200)*10;
     } else if (!gameOver && !gameWon) {
-      birdV += (gamePhase === 1 ? 0.22 : 0.48);
+      
+      // 1. SCORING MECHANISM: 1 point per second (60 frames)
+      frame++;
+      if (frame % 60 === 0) {
+        score++;
+        if (score === 20 && gamePhase === 1) { gamePhase = 2; pipes = []; birdY = 425; }
+        if (score >= 40) gameWon = true;
+      }
+
+      // 2. SPEED MECHANISM (Phase 1 Only)
+      let speedFactor = 1;
+      if (gamePhase === 1) {
+        speedFactor = 1 + (score * 0.05); // +5% speed per point
+        if (score >= 15) speedFactor *= 1.8; // Crazy speed surge
+      }
+
+      // Physics
+      birdV += (gamePhase === 1 ? (0.22 * speedFactor) : 0.48);
       birdY += birdV;
 
       if (gamePhase === 1) {
@@ -97,34 +108,35 @@
         ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40);
       }
 
-      let spawn = (gamePhase === 1) ? 140 : 115;
-      if (frame % spawn === 0) {
+      // 3. SPAWNING & MOVEMENT
+      let spawnRate = (gamePhase === 1) ? 140 : 115;
+      if (gamePhase === 1 && score >= 15) spawnRate = 70; // Spawn pipes faster during surge
+
+      if (frame % spawnRate === 0) {
         if (gamePhase === 1) {
           let t = Math.random()*150 + 50;
-          pipes.push({x: 360, top: t, bot: t+190, type: 'f', p: false});
+          pipes.push({x: 360, top: t, bot: t+190, type: 'f'});
         } else {
           let h = Math.random()*50 + 75;
-          pipes.push({x: 360, top: 460-h, type: 'd', p: false});
+          pipes.push({x: 360, top: 460-h, type: 'd'});
         }
       }
 
       pipes.forEach(p => {
-        p.x -= (gamePhase === 1 ? 1.8 : 2.8);
+        // Move pipes based on speedFactor
+        p.x -= (gamePhase === 1 ? (1.8 * speedFactor) : 2.8);
+        
+        // Collision Detection
         if (birdX + 15 > p.x + 18 && birdX - 15 < p.x + 62) {
           if (p.type === 'f') {
             if (birdY - 12 < p.top || birdY + 12 > p.bot) gameOver = true;
           } else if (birdY + 15 > p.top + 10) gameOver = true;
         }
-        if (p.x < birdX && !p.p) {
-          score++; p.p = true;
-          if (score === 20) { gamePhase = 2; pipes = []; birdY = 425; }
-          if (score >= 40) gameWon = true;
-        }
       });
       pipes = pipes.filter(p => p.x > -100);
-      frame++;
     }
 
+    // Drawing Pipes
     pipes.forEach(p => {
       if (pipeImg.complete && pipeImg.width > 0) {
         if (p.type === 'f') {
@@ -139,6 +151,7 @@
       }
     });
 
+    // Drawing Bird
     ctx.save(); ctx.translate(birdX, birdY);
     if (gamePhase === 1) ctx.rotate(birdV * 0.1);
     if (effectT > 0) {
@@ -149,17 +162,16 @@
     else { ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); }
     ctx.restore();
 
+    // UI
     ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.fillText("Score: "+score, 20, 40);
-
     if (gameOver || gameWon) runEndSequence();
-
     requestAnimationFrame(loop);
   }
 
   function runEndSequence() {
     if (!endTriggered) {
       endTriggered = true;
-      let win = score >= 20;
+      let win = score >= 40;
       let m = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
       let s = ["sound1.mp3","sound2.mp3","sound3.mp3","sound4.mp3","sound5.mp3"];
       let r = Math.floor(Math.random()*5);
@@ -171,10 +183,7 @@
       
       deaths++; localStorage.setItem("totalDeaths", deaths);
       if (score > highScore) { highScore = score; localStorage.setItem("highScore", highScore); }
-      
-      // Show skip button after 1.5 seconds
       setTimeout(() => { showSkip = true; }, 1500);
-      // Auto-show scoreboard after 5 seconds if they don't skip
       setTimeout(() => { showScoreboard = true; }, 5000);
     }
     
@@ -182,15 +191,14 @@
       memeImg.style.display = "none";
       ctx.fillStyle = "rgba(0,0,0,0.9)"; ctx.fillRect(40,100,280,300);
       ctx.fillStyle = "white"; ctx.textAlign="center";
-      ctx.font = "bold 24px Arial"; ctx.fillText(score>=20?"WINNER!":"GAME OVER", 180, 150);
+      ctx.font = "bold 24px Arial"; ctx.fillText(score>=40?"WINNER!":"GAME OVER", 180, 150);
       ctx.font = "18px Arial"; 
       ctx.fillText("Score: "+score, 180, 200);
       ctx.fillText("High Score: "+highScore, 180, 240);
-      ctx.fillText("Deaths: "+deaths, 180, 280);
+      ctx.fillText("Total Deaths: "+deaths, 180, 280);
       ctx.fillStyle = "#70c5ce"; ctx.fillText("Tap to Restart", 180, 360);
       ctx.textAlign="left";
     } else if (showSkip) {
-      // Draw Skip Button Visual
       ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(130, 430, 100, 35);
       ctx.fillStyle = "black"; ctx.font = "bold 14px Arial"; ctx.textAlign="center";
       ctx.fillText("SKIP >>", 180, 453); ctx.textAlign="left";
