@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino - Hybrid Scoring</title>
+  <title>Flappy Dino - Meteor Surge</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; }
@@ -35,7 +35,7 @@
 
   let birdX = 50, birdY = 250, birdV = 0;
   let score = 0, frame = 0, bgX = 0, hp = 200; 
-  let pipes = [], gameStarted = false, gameOver = false, gameWon = false;
+  let pipes = [], meteors = [], gameStarted = false, gameOver = false, gameWon = false;
   let gamePhase = 1, showScoreboard = false, endTriggered = false, showSkip = false;
   
   let highScore = localStorage.getItem("highScore") || 0;
@@ -93,7 +93,6 @@
     } else if (!gameOver && !gameWon) {
       
       frame++;
-      // PHASE 1: SCORE BY TIME
       if (frame % 60 === 0 && gamePhase === 1) {
         score++;
         if (score === 20) { gamePhase = 2; pipes = []; birdY = 425; }
@@ -115,9 +114,9 @@
         ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40);
       }
 
+      // Spawning Pipes
       let spawnRate = (gamePhase === 1) ? 140 : 115;
       if (gamePhase === 1 && score >= 15) spawnRate = 70; 
-
       if (frame % spawnRate === 0) {
         if (gamePhase === 1) {
           let t = Math.random()*150 + 50;
@@ -128,31 +127,47 @@
         }
       }
 
+      // Spawning Meteors (Diagonal falling after score 30)
+      if (gamePhase === 2 && score >= 30 && frame % 100 === 0) {
+          meteors.push({ x: 400, y: -50, size: 30 });
+      }
+
+      // Pipe Logic
       pipes.forEach(p => {
         p.x -= (gamePhase === 1 ? (1.8 * speedFactor) : 2.8);
-        
-        // COLLISION
         if (birdX + 15 > p.x + 18 && birdX - 15 < p.x + 62) {
           if (gamePhase === 1) {
             gameOver = true; shakeTime = 20;
           } else {
-            hp -= 2; 
-            shakeTime = 5;
-            if (hp <= 0) { hp = 0; gameOver = true; shakeTime = 25; }
+            hp -= 200; // Cactus Instant Kill
+            shakeTime = 25;
+            if (hp <= 0) { hp = 0; gameOver = true; }
           }
         }
-
-        // PHASE 2: SCORE BY CROSSING PIPES
         if (gamePhase === 2 && !p.passed && p.x + 80 < birdX) {
-            score++;
-            p.passed = true;
+            score++; p.passed = true;
             if (score >= 40) gameWon = true;
         }
       });
+
+      // Meteor Logic
+      meteors.forEach((m, index) => {
+          m.x -= 4; // Move left
+          m.y += 3; // Fall down
+          // Collision
+          if (Math.hypot(birdX - m.x, birdY - m.y) < 25) {
+              hp -= 50;
+              shakeTime = 15;
+              meteors.splice(index, 1);
+              if (hp <= 0) { hp = 0; gameOver = true; }
+          }
+      });
+
       pipes = pipes.filter(p => p.x > -100);
+      meteors = meteors.filter(m => m.y < 550);
     }
 
-    // DRAWING
+    // Draw Pipes
     pipes.forEach(p => {
       if (pipeImg.complete && pipeImg.width > 0) {
         if (p.type === 'f') {
@@ -163,6 +178,18 @@
           ctx.drawImage(pipeImg, 0, 0, pipeImg.width, pipeImg.height, p.x, p.top, 80, 460-p.top);
         }
       }
+    });
+
+    // Draw Meteors
+    meteors.forEach(m => {
+        ctx.fillStyle = "orange";
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.size/2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = "red"; // Meteor core
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.size/4, 0, Math.PI*2);
+        ctx.fill();
     });
 
     if (gamePhase === 2 && !gameOver) {
@@ -178,12 +205,7 @@
         ctx.fillStyle = "black"; ctx.fillRect(-20, -35, 40, 5);
         ctx.fillStyle = "#2ecc71"; ctx.fillRect(-20, -35, (hp/200)*40, 5);
     }
-    if (effectT > 0) {
-      ctx.font = "30px Arial"; ctx.fillText(tapCount >= 4 ? "🔥" : "💨", -50, 10);
-      effectT--;
-    }
     if (birdImg.complete && birdImg.width > 0) ctx.drawImage(birdImg, -25, -25, 50, 50);
-    else { ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); }
     ctx.restore();
 
     ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.fillText("Score: "+score, 20, 40);
