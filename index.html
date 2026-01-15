@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino - Meteor Surge</title>
+  <title>Flappy Dino - Optimized</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; }
@@ -40,7 +40,7 @@
   
   let highScore = localStorage.getItem("highScore") || 0;
   let deaths = localStorage.getItem("totalDeaths") || 0;
-  let lastTap = 0, tapCount = 0, effectT = 0, shakeTime = 0;
+  let lastTap = 0, tapCount = 0, shakeTime = 0;
 
   function doTap() {
     if (gameOver || gameWon) {
@@ -51,13 +51,8 @@
     if (!gameStarted) { gameStarted = true; return; }
     flapSound.currentTime = 0; flapSound.play().catch(()=>{});
     
-    let now = Date.now();
-    if (now - lastTap < 300) tapCount++; else tapCount = 1;
-    lastTap = now;
-    if (tapCount >= 2) effectT = 15;
-
-    if (gamePhase === 1) birdV = -5;
-    else if (birdY >= 420) birdV = -12;
+    // Jump Strength
+    birdV = (gamePhase === 1) ? -5.5 : -10;
   }
 
   window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
@@ -72,14 +67,16 @@
       shakeTime--;
     }
 
+    // Visual Surge
     if (gamePhase === 1 && score >= 15) {
         canvas.style.filter = "invert(1) hue-rotate(180deg)";
     } else {
         canvas.style.filter = "invert(0)";
     }
 
+    // BG Scroll
     if (bgImg.complete && bgImg.width > 0) {
-      if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.5 : 1.5);
+      if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 1 : 2);
       if (bgX <= -360) bgX = 0;
       ctx.drawImage(bgImg, bgX, 0, 360, 500);
       ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
@@ -88,115 +85,102 @@
     if (!gameStarted) {
       ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0,0,360,500);
       ctx.fillStyle = "white"; ctx.font = "bold 30px Arial"; ctx.textAlign="center";
-      ctx.fillText("TAP TO START", 180, 250); ctx.textAlign="left";
+      ctx.fillText("TAP TO START", 180, 250);
       birdY = 250 + Math.sin(Date.now()/200)*10;
     } else if (!gameOver && !gameWon) {
       
       frame++;
+      // Score by Time (Phase 1)
       if (frame % 60 === 0 && gamePhase === 1) {
         score++;
-        if (score === 20) { gamePhase = 2; pipes = []; birdY = 425; }
+        if (score === 20) { gamePhase = 2; pipes = []; birdY = 425; birdV = 0; }
       }
 
-      let speedFactor = 1;
-      if (gamePhase === 1) {
-        speedFactor = 1 + (score * 0.05); 
-        if (score >= 15) speedFactor *= 1.8; 
-      }
-
-      birdV += (gamePhase === 1 ? (0.22 * speedFactor) : 0.48);
+      // Consistent Gravity
+      birdV += (gamePhase === 1 ? 0.25 : 0.5);
       birdY += birdV;
 
+      // Boundaries
       if (gamePhase === 1) {
-        if (birdY > 500 || birdY < 0) { gameOver = true; shakeTime = 20; }
+        if (birdY > 480 || birdY < 0) { gameOver = true; shakeTime = 20; }
       } else {
         if (birdY > 425) { birdY = 425; birdV = 0; }
-        ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40);
+        ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40); // Ground
       }
 
-      // Spawning Pipes
-      let spawnRate = (gamePhase === 1) ? 140 : 115;
-      if (gamePhase === 1 && score >= 15) spawnRate = 70; 
-      if (frame % spawnRate === 0) {
+      // Optimized Spawn Rate
+      let speedFactor = (gamePhase === 1 && score >= 15) ? 2.5 : 1.8;
+      let spawnInterval = (gamePhase === 1) ? (score >= 15 ? 50 : 100) : 90;
+
+      if (frame % spawnInterval === 0) {
         if (gamePhase === 1) {
-          let t = Math.random()*150 + 50;
-          pipes.push({x: 360, top: t, bot: t+190, type: 'f', passed: false});
+          let gap = 160;
+          let t = Math.random() * (300 - 100) + 50;
+          pipes.push({x: 360, top: t, bot: t + gap, type: 'f', passed: false});
         } else {
-          let h = Math.random()*50 + 75;
-          pipes.push({x: 360, top: 460-h, type: 'd', passed: false});
+          let h = Math.random() * 40 + 60;
+          pipes.push({x: 360, top: 460 - h, type: 'd', passed: false});
         }
       }
 
-      // Spawning Meteors (Diagonal falling after score 30)
-      if (gamePhase === 2 && score >= 30 && frame % 100 === 0) {
-          meteors.push({ x: 400, y: -50, size: 30 });
+      // Meteors
+      if (gamePhase === 2 && score >= 30 && frame % 120 === 0) {
+          meteors.push({ x: 400, y: -20 });
       }
 
-      // Pipe Logic
+      // Logic: Pipes
       pipes.forEach(p => {
-        p.x -= (gamePhase === 1 ? (1.8 * speedFactor) : 2.8);
-        if (birdX + 15 > p.x + 18 && birdX - 15 < p.x + 62) {
+        p.x -= speedFactor;
+        // Tighter Hitbox (10 instead of 15)
+        if (birdX + 10 > p.x && birdX - 10 < p.x + 60) {
           if (gamePhase === 1) {
-            gameOver = true; shakeTime = 20;
+            if (birdY - 10 < p.top || birdY + 10 > p.bot) { gameOver = true; shakeTime = 20; }
           } else {
-            hp -= 200; // Cactus Instant Kill
-            shakeTime = 25;
-            if (hp <= 0) { hp = 0; gameOver = true; }
+            // Cactus is 200 damage (Instant)
+            if (birdY + 15 > p.top) { hp = 0; gameOver = true; shakeTime = 25; }
           }
         }
-        if (gamePhase === 2 && !p.passed && p.x + 80 < birdX) {
+        if (gamePhase === 2 && !p.passed && p.x + 60 < birdX) {
             score++; p.passed = true;
             if (score >= 40) gameWon = true;
         }
       });
 
-      // Meteor Logic
-      meteors.forEach((m, index) => {
-          m.x -= 4; // Move left
-          m.y += 3; // Fall down
-          // Collision
+      // Logic: Meteors
+      meteors.forEach((m, i) => {
+          m.x -= 4; m.y += 3.5;
           if (Math.hypot(birdX - m.x, birdY - m.y) < 25) {
-              hp -= 50;
-              shakeTime = 15;
-              meteors.splice(index, 1);
+              hp -= 50; shakeTime = 15; meteors.splice(i, 1);
               if (hp <= 0) { hp = 0; gameOver = true; }
           }
       });
 
-      pipes = pipes.filter(p => p.x > -100);
-      meteors = meteors.filter(m => m.y < 550);
+      pipes = pipes.filter(p => p.x > -80);
+      meteors = meteors.filter(m => m.y < 520);
     }
 
-    // Draw Pipes
+    // DRAWING
     pipes.forEach(p => {
-      if (pipeImg.complete && pipeImg.width > 0) {
+      if (pipeImg.complete) {
         if (p.type === 'f') {
-          ctx.save(); ctx.translate(p.x+40, p.top); ctx.scale(1,-1);
-          ctx.drawImage(pipeImg, 0, 0, pipeImg.width, pipeImg.height, -40, 0, 80, p.top); ctx.restore();
-          ctx.drawImage(pipeImg, 0, 0, pipeImg.width, pipeImg.height, p.x, p.bot, 80, 500-p.bot);
+          ctx.save(); ctx.translate(p.x+30, p.top); ctx.scale(1,-1);
+          ctx.drawImage(pipeImg, -40, 0, 80, p.top); ctx.restore();
+          ctx.drawImage(pipeImg, p.x, p.bot, 80, 500-p.bot);
         } else {
-          ctx.drawImage(pipeImg, 0, 0, pipeImg.width, pipeImg.height, p.x, p.top, 80, 460-p.top);
+          ctx.drawImage(pipeImg, p.x, p.top, 80, 460-p.top);
         }
       }
     });
 
-    // Draw Meteors
     meteors.forEach(m => {
-        ctx.fillStyle = "orange";
-        ctx.beginPath();
-        ctx.arc(m.x, m.y, m.size/2, 0, Math.PI*2);
-        ctx.fill();
-        ctx.fillStyle = "red"; // Meteor core
-        ctx.beginPath();
-        ctx.arc(m.x, m.y, m.size/4, 0, Math.PI*2);
-        ctx.fill();
+        ctx.fillStyle = "orange"; ctx.beginPath(); ctx.arc(m.x, m.y, 15, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(m.x, m.y, 7, 0, Math.PI*2); ctx.fill();
     });
 
     if (gamePhase === 2 && !gameOver) {
         ctx.fillStyle = "black"; ctx.fillRect(100, 15, 160, 15);
         ctx.fillStyle = hp > 60 ? "#2ecc71" : "#e74c3c";
         ctx.fillRect(100, 15, (hp / 200) * 160, 15);
-        ctx.strokeStyle = "white"; ctx.strokeRect(100, 15, 160, 15);
     }
 
     ctx.save(); ctx.translate(birdX, birdY);
@@ -205,10 +189,12 @@
         ctx.fillStyle = "black"; ctx.fillRect(-20, -35, 40, 5);
         ctx.fillStyle = "#2ecc71"; ctx.fillRect(-20, -35, (hp/200)*40, 5);
     }
-    if (birdImg.complete && birdImg.width > 0) ctx.drawImage(birdImg, -25, -25, 50, 50);
+    if (birdImg.complete) ctx.drawImage(birdImg, -25, -25, 50, 50);
     ctx.restore();
 
-    ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.fillText("Score: "+score, 20, 40);
+    ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.textAlign="left";
+    ctx.fillText("Score: "+score, 20, 40);
+    
     if (gameOver || gameWon) runEndSequence();
     ctx.restore();
     requestAnimationFrame(loop);
@@ -220,11 +206,10 @@
       endTriggered = true;
       let win = score >= 40;
       let m = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
-      let s = ["sound1.mp3","sound2.mp3","sound3.mp3","sound4.mp3","sound5.mp3"];
       let r = Math.floor(Math.random()*5);
       memeImg.src = win ? "win.gif" : m[r];
       memeImg.style.display = "block";
-      endSound.src = win ? "win.mp3" : s[r];
+      endSound.src = win ? "win.mp3" : "sound"+(r+1)+".mp3";
       endSound.load(); endSound.play().catch(()=>{});
       deaths++; localStorage.setItem("totalDeaths", deaths);
       if (score > highScore) { highScore = score; localStorage.setItem("highScore", highScore); }
@@ -242,11 +227,6 @@
       ctx.fillText("High Score: "+highScore, 180, 240);
       ctx.fillText("Total Deaths: "+deaths, 180, 280);
       ctx.fillStyle = "#70c5ce"; ctx.fillText("Tap to Restart", 180, 360);
-      ctx.textAlign="left";
-    } else if (showSkip) {
-      ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(130, 430, 100, 35);
-      ctx.fillStyle = "black"; ctx.font = "bold 14px Arial"; ctx.textAlign="center";
-      ctx.fillText("SKIP >>", 180, 453); ctx.textAlign="left";
     }
   }
 
