@@ -5,41 +5,10 @@
   <title>Flappy Dino Meme Edition</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
-    body { 
-      margin: 0; 
-      padding: 0;
-      background: #000; 
-      overflow: hidden; 
-      font-family: sans-serif;
-      /* Prevents blue highlight on tap */
-      -webkit-tap-highlight-color: transparent; 
-    }
-    #game-container { 
-      width: 100vw; 
-      height: 100vh; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-    }
-    canvas { 
-      background: #70c5ce; 
-      display: block; 
-      touch-action: none;
-      /* Ensures canvas fits screen while maintaining look */
-      max-width: 100%;
-      max-height: 100%;
-    }
-    #meme-overlay { 
-      position: absolute; 
-      top: 20%; 
-      left: 50%; 
-      transform: translateX(-50%); 
-      width: 80%; 
-      max-width: 300px;
-      display: none; 
-      border-radius: 10px; 
-      z-index: 10;
-    }
+    body { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+    #game-container { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+    canvas { background: #70c5ce; display: block; touch-action: none; max-width: 100%; max-height: 100%; }
+    #meme-overlay { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 80%; max-width: 300px; display: none; border-radius: 10px; z-index: 10; }
   </style>
 </head>
 <body>
@@ -54,13 +23,11 @@
   const ctx = canvas.getContext("2d");
   const memeImg = document.getElementById("meme-overlay");
 
-  // --- RESPONSIVE SIZING ---
-  // We set a logical internal size, but the CSS handles the display size
   const GAME_WIDTH = 360;
-  const GAME_HEIGHT = 640; // Increased height for taller modern phones
+  const GAME_HEIGHT = 640;
+  const PIPE_WIDTH = 110; // THICKER PIPES
 
   function resize() {
-      const scale = Math.min(window.innerWidth / GAME_WIDTH, window.innerHeight / GAME_HEIGHT);
       canvas.width = GAME_WIDTH;
       canvas.height = GAME_HEIGHT;
   }
@@ -79,6 +46,9 @@
   let pipes = [], gameStarted = false, gameOver = false, gameWon = false;
   let gamePhase = 1, showScoreboard = false, endTriggered = false, showSkip = false;
   
+  let baseSpeed = 2.2;
+  let speedMult = 1;
+
   let highScore = localStorage.getItem("highScore") || 0;
   let deaths = localStorage.getItem("totalDeaths") || 0;
   let lastTap = 0, tapCount = 0, effectT = 0;
@@ -98,8 +68,8 @@
     lastTap = now;
     if (tapCount >= 2) effectT = 15;
 
-    if (gamePhase === 1) birdV = -6; // Slightly more jump for taller screen
-    else if (birdY >= GAME_HEIGHT - 80) birdV = -13;
+    if (gamePhase === 1) birdV = -6;
+    else if (birdY >= GAME_HEIGHT - 75) birdV = -13;
   }
 
   window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
@@ -107,9 +77,10 @@
 
   function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    speedMult = 1 + (score * 0.05); 
 
     if (bgImg.complete && bgImg.width > 0) {
-      if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.5 : 1.5);
+      if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 0.5 * speedMult : 1.5);
       if (bgX <= -GAME_WIDTH) bgX = 0;
       ctx.drawImage(bgImg, bgX, 0, GAME_WIDTH, GAME_HEIGHT);
       ctx.drawImage(bgImg, bgX + GAME_WIDTH, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -133,8 +104,8 @@
         ctx.fillStyle = "#333"; ctx.fillRect(0, GAME_HEIGHT - 40, GAME_WIDTH, 40);
       }
 
-      let spawnRate = (gamePhase === 1) ? 120 : 100;
-      if (frame % spawnRate === 0) {
+      let spawnRate = Math.max(60, (gamePhase === 1 ? 120 : 100) / speedMult);
+      if (frame % Math.floor(spawnRate) === 0) {
         if (gamePhase === 1) {
           let t = Math.random()*(GAME_HEIGHT/2) + 50;
           pipes.push({x: GAME_WIDTH, top: t, bot: t+200, type: 'f', p: false});
@@ -145,33 +116,41 @@
       }
 
       pipes.forEach(p => {
-        p.x -= (gamePhase === 1 ? 2.2 : 3.5);
-        if (birdX + 12 > p.x + 15 && birdX - 12 < p.x + 65) {
+        p.x -= (gamePhase === 1 ? baseSpeed * speedMult : 3.5);
+        
+        // --- EXTRA FORGIVING HITBOXES ---
+        let bPad = 14; 
+        let pPad = (p.type === 'f') ? 25 : 35; // Thicker visual but MUCH smaller hitbox
+
+        if (birdX + (30 - bPad) > p.x + pPad && birdX - (30 - bPad) < p.x + PIPE_WIDTH - pPad) {
           if (p.type === 'f') {
             if (birdY - 10 < p.top || birdY + 10 > p.bot) gameOver = true;
-          } else if (birdY + 15 > p.top + 10) gameOver = true;
+          } else {
+            if (birdY + 15 > p.top + 20) gameOver = true;
+          }
         }
-        if (p.x < birdX && !p.p) {
+
+        if (p.x + (PIPE_WIDTH/2) < birdX && !p.p) {
           score++; p.p = true;
           if (score === 10) { gamePhase = 2; pipes = []; birdY = GAME_HEIGHT - 75; }
           if (score >= 20) gameWon = true;
         }
       });
-      pipes = pipes.filter(p => p.x > -100);
+      pipes = pipes.filter(p => p.x > -PIPE_WIDTH);
       frame++;
     }
 
     pipes.forEach(p => {
       if (pipeImg.complete && pipeImg.width > 0) {
         if (p.type === 'f') {
-          ctx.save(); ctx.translate(p.x+40, p.top); ctx.scale(1,-1);
-          ctx.drawImage(pipeImg, -40, 0, 80, p.top); ctx.restore();
-          ctx.drawImage(pipeImg, p.x, p.bot, 80, GAME_HEIGHT-p.bot);
-        } else ctx.drawImage(pipeImg, p.x, p.top, 80, (GAME_HEIGHT-40)-p.top);
+          ctx.save(); ctx.translate(p.x + (PIPE_WIDTH/2), p.top); ctx.scale(1,-1);
+          ctx.drawImage(pipeImg, -(PIPE_WIDTH/2), 0, PIPE_WIDTH, p.top); ctx.restore();
+          ctx.drawImage(pipeImg, p.x, p.bot, PIPE_WIDTH, GAME_HEIGHT-p.bot);
+        } else ctx.drawImage(pipeImg, p.x, p.top, PIPE_WIDTH, (GAME_HEIGHT-40)-p.top);
       } else {
         ctx.fillStyle = "green";
-        if (p.type === 'f') { ctx.fillRect(p.x,0,80,p.top); ctx.fillRect(p.x,p.bot,80,GAME_HEIGHT-p.bot); }
-        else ctx.fillRect(p.x, p.top, 80, (GAME_HEIGHT-40)-p.top);
+        if (p.type === 'f') { ctx.fillRect(p.x,0,PIPE_WIDTH,p.top); ctx.fillRect(p.x,p.bot,PIPE_WIDTH,GAME_HEIGHT-p.bot); }
+        else ctx.fillRect(p.x, p.top, PIPE_WIDTH, (GAME_HEIGHT-40)-p.top);
       }
     });
 
@@ -189,7 +168,6 @@
     ctx.fillText("Score: " + score, 20, 50);
 
     if (gameOver || gameWon) runEndSequence();
-
     requestAnimationFrame(loop);
   }
 
@@ -200,15 +178,12 @@
       let mList = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
       let sList = ["sound1.mp3","sound2.mp3","sound3.mp3","sound4.mp3","sound5.mp3"];
       let r = Math.floor(Math.random()*5);
-      
       memeImg.src = win ? "win.gif" : mList[r];
       memeImg.style.display = "block";
       endSound.src = win ? "win.mp3" : sList[r];
       endSound.load(); endSound.play().catch(()=>{});
-      
       deaths++; localStorage.setItem("totalDeaths", deaths);
       if (score > highScore) { highScore = score; localStorage.setItem("highScore", highScore); }
-      
       setTimeout(() => { showSkip = true; }, 1500);
       setTimeout(() => { showScoreboard = true; }, 6000);
     }
@@ -231,7 +206,6 @@
       ctx.fillText("SKIP >>", GAME_WIDTH/2, GAME_HEIGHT*0.8 + 32); ctx.textAlign="left";
     }
   }
-
   loop();
 </script>
 </body>
