@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino</title>
+  <title>Flappy Dino - Turbo Edition</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -68,17 +68,24 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (gamePhase === 1) {
-        speedMult = 1 + (score * 0.08); 
+        // --- EXPONENTIAL TURBO SPEED ---
+        if (score < 15) {
+            speedMult = 1 + (score * 0.06); 
+        } else {
+            // Turbo boost: Ramps up heavily for the last 5 points
+            speedMult = 1.9 + ((score - 15) * 0.25); 
+        }
+        
         if (gameStarted && !gameOver && frame % 60 === 0 && frame > 0) {
             score++;
-            if (score === 10) { 
+            if (score === 20) { 
                 gamePhase = 2; 
                 pipes = []; 
                 birdY = 425; 
             }
         }
     } else {
-        speedMult = 1;
+        speedMult = 1.35; // Steady for Dino Phase
     }
 
     if (bgImg.complete && bgImg.width > 0) {
@@ -128,7 +135,7 @@
           }
           if (p.x < birdX && !p.p) {
               score++; p.p = true;
-              if (score >= 20) gameWon = true;
+              if (score >= 30) gameWon = true;
           }
         }
       });
@@ -150,15 +157,13 @@
       }
     });
 
-    // --- BLINKING PHASE 2 WARNING ---
-    if (gamePhase === 1 && score === 9) {
-        // Blink every 15 frames for a high-alert feel
-        if (Math.floor(frame / 15) % 2 === 0) {
+    // Warning text blinks faster during the turbo phase
+    if (gamePhase === 1 && score >= 18) {
+        let blinkRate = score === 19 ? 8 : 15;
+        if (Math.floor(frame / blinkRate) % 2 === 0) {
             ctx.save();
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "black";
-            ctx.fillStyle = "#FF3333";
-            ctx.font = "bold 32px Arial";
+            ctx.shadowBlur = 10; ctx.shadowColor = "black";
+            ctx.fillStyle = "#FF3333"; ctx.font = "bold 32px Arial";
             ctx.textAlign = "center";
             ctx.fillText("PHASE 2 COMING!", 180, 160);
             ctx.restore();
@@ -185,7 +190,7 @@
   function runEndSequence() {
     if (!endTriggered) {
       endTriggered = true;
-      let win = score >= 20;
+      let win = score >= 30;
       let m = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
       let s = ["sound1.mp3","sound2.mp3","sound3.mp3","sound4.mp3","sound5.mp3"];
       let r = Math.floor(Math.random()*5);
@@ -202,7 +207,7 @@
       memeImg.style.display = "none";
       ctx.fillStyle = "rgba(0,0,0,0.9)"; ctx.fillRect(40,100,280,300);
       ctx.fillStyle = "white"; ctx.textAlign="center";
-      ctx.font = "bold 24px Arial"; ctx.fillText(score>=20?"WINNER!":"GAME OVER", 180, 150);
+      ctx.font = "bold 24px Arial"; ctx.fillText(score>=30?"WINNER!":"GAME OVER", 180, 150);
       ctx.font = "18px Arial"; 
       ctx.fillText("Score: "+score, 180, 200);
       ctx.fillText("High Score: "+highScore, 180, 240);
