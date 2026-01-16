@@ -11,6 +11,10 @@ const bgImg = new Image();   bgImg.src = "bg.png";
 // Game Sounds
 const flapSound = new Audio("flap.mp3");
 flapSound.load(); 
+const surgeSound = new Audio("surge.mp3"); // Name your file surge.mp3
+surgeSound.load();
+let surgePlayed = false; // This prevents the sound from looping forever at score 15
+
 
 // Meme Sounds Pre-loading
 const memeFiles = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
