@@ -7,10 +7,11 @@ const memeImg = document.getElementById("meme-overlay");
 const pipeImg = new Image(); pipeImg.src = "pipe.png";
 const birdImg = new Image(); birdImg.src = "bird.png";
 const bgImg = new Image();   bgImg.src = "bg.png";
-
 // Game Sounds
 const flapSound = new Audio("flap.mp3");
-flapSound.load(); 
+flapSound.load();
+const tripleSound = new Audio("triple.mp3"); // Name your file triple.mp3
+tripleSound.load();
 const surgeSound = new Audio("surge.mp3"); // Name your file surge.mp3
 surgeSound.load();
 let surgePlayed = false; // This prevents the sound from looping forever at score 15
@@ -29,6 +30,8 @@ winSound.load();
 // Game Variables
 let birdX = 50, birdY = 250, birdV = 0;
 let score = 0, frame = 0, bgX = 0, hp = 200; 
+let tapCount = 0;
+let lastTapTime = 0;
 let pipes = [], meteors = [], gameStarted = false, gameOver = false, gameWon = false;
 let gamePhase = 1, showScoreboard = false, endTriggered = false, showSkip = false;
 
