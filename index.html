@@ -3,53 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Flappy Dino - Pro Edition</title>
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <style>
-    /* Basic Layout */
-    body { 
-      margin: 0; 
-      background: #222; 
-      overflow: hidden; 
-      font-family: 'Arial', sans-serif; 
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    #game-container { 
-      position: relative; 
-      width: 360px; 
-      height: 500px; 
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    }
-
-    canvas { 
-      background: #70c5ce; 
-      display: block; 
-      touch-action: none; 
-      transition: filter 0.4s ease; 
-    }
-
-    /* The result meme that pops up */
-    #meme-overlay { 
-      position: absolute; 
-      top: 100px; 
-      left: 50%; 
-      transform: translateX(-50%); 
-      width: 260px; 
-      display: none; 
-      border-radius: 10px; 
-      z-index: 10;
-      border: 3px solid white;
-    }
-  </style>
+  
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <div id="game-container">
     <canvas id="game" width="360" height="500"></canvas>
-    <img id="meme-overlay" src="" alt="Game Result Meme">
+    
+    <img id="meme-overlay" src="" alt="Game Result">
   </div>
 
   <script src="script.js"></script>
