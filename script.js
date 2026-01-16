@@ -46,10 +46,26 @@ function doTap() {
         else if (showSkip) showScoreboard = true;
         return;
     }
-    
+
+    // --- TRIPLE TAP LOGIC START ---
+    let currentTime = Date.now();
+    if (currentTime - lastTapTime < 300) { // 300ms window for combo
+        tapCount++;
+    } else {
+        tapCount = 1; // Reset if they tap too slowly
+    }
+    lastTapTime = currentTime;
+
+    if (tapCount === 3) {
+        tripleSound.currentTime = 0;
+        tripleSound.play().catch(e => {});
+        shakeTime = 10; // Extra feedback for the triple tap
+        tapCount = 0; // Reset after successful trigger
+    }
+    // --- TRIPLE TAP LOGIC END ---
+
     if (!gameStarted) { 
         gameStarted = true; 
-        // FIX: Spawn the first pipe immediately so there is no delay
         let t = Math.random() * 200 + 50;
         pipes.push({x: 400, top: t, bot: t + 180, type: 'f', passed: false});
         return; 
@@ -61,6 +77,7 @@ function doTap() {
     if (gamePhase === 1) birdV = -5.2;
     else if (birdY >= 420) birdV = -10.5;
 }
+
 
 
 window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
