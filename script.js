@@ -75,7 +75,7 @@ function doTap() {
     flapSound.play().catch(()=>{});
     
     if (gamePhase === 1) birdV = -5.2;
-    else if (birdY >= 420) birdV = -12.0;
+    else if (birdY >= 420) birdV = -10.0;
 }
 
 
