@@ -1,0 +1,219 @@
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const memeImg = document.getElementById("meme-overlay");
+
+// Asset Loading
+const pipeImg = new Image(); pipeImg.src = "pipe.png";
+const birdImg = new Image(); birdImg.src = "bird.png";
+const bgImg = new Image();   bgImg.src = "bg.png";
+
+const flapSound = new Audio("flap.mp3");
+let endSound = new Audio();
+
+// Game Variables
+let birdX = 50, birdY = 250, birdV = 0;
+let score = 0, frame = 0, bgX = 0, hp = 200; 
+let pipes = [], meteors = [], gameStarted = false, gameOver = false, gameWon = false;
+let gamePhase = 1, showScoreboard = false, endTriggered = false, showSkip = false;
+
+// Storage
+let highScore = localStorage.getItem("highScore") || 0;
+let deaths = localStorage.getItem("totalDeaths") || 0;
+let shakeTime = 0;
+
+function doTap() {
+    if (gameOver || gameWon) {
+        if (showScoreboard) location.reload(); 
+        else if (showSkip) showScoreboard = true;
+        return;
+    }
+    if (!gameStarted) { gameStarted = true; return; }
+    flapSound.currentTime = 0; flapSound.play().catch(()=>{});
+    
+    if (gamePhase === 1) birdV = -5.2;
+    else if (birdY >= 420) birdV = -10.5; // Dino Jump
+}
+
+window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
+window.addEventListener("mousedown", doTap);
+
+function loop() {
+    ctx.save();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Screen Shake Effect
+    if (shakeTime > 0) {
+        ctx.translate(Math.random() * 6 - 3, Math.random() * 6 - 3);
+        shakeTime--;
+    }
+
+    // Phase 1 Visual Surge
+    if (gamePhase === 1 && score >= 15) {
+        canvas.style.filter = "invert(1) hue-rotate(180deg)";
+    } else {
+        canvas.style.filter = "invert(0)";
+    }
+
+    // Background Scroll
+    if (bgImg.complete && bgImg.width > 0) {
+        if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 1 : 2.5);
+        if (bgX <= -360) bgX = 0;
+        ctx.drawImage(bgImg, bgX, 0, 360, 500);
+        ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
+    }
+
+    if (!gameStarted) {
+        ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0,0,360,500);
+        ctx.fillStyle = "white"; ctx.font = "bold 25px Arial"; ctx.textAlign="center";
+        ctx.fillText("TAP TO START", 180, 250);
+        birdY = 250 + Math.sin(Date.now()/200)*10;
+    } else if (!gameOver && !gameWon) {
+        
+        frame++;
+        // Phase 1 Timer Scoring
+        if (frame % 60 === 0 && gamePhase === 1) {
+            score++;
+            if (score === 20) { 
+                gamePhase = 2; 
+                pipes = []; 
+                birdY = 425; 
+                birdV = 0; 
+            }
+        }
+
+        // Gravity & Physics
+        birdV += (gamePhase === 1 ? 0.26 : 0.45);
+        birdY += birdV;
+
+        if (gamePhase === 1) {
+            if (birdY > 500 || birdY < 0) { gameOver = true; shakeTime = 15; }
+        } else {
+            if (birdY > 425) { birdY = 425; birdV = 0; }
+            ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40); // Ground
+        }
+
+        // Difficulty Tuning
+        let moveSpeed = (gamePhase === 1 && score >= 15) ? 3.8 : 2.2;
+        let spawnRate = (gamePhase === 1) ? (score >= 15 ? 85 : 145) : 90;
+
+        // Obstacle Spawning
+        if (frame > 20 && frame % spawnRate === 0) {
+            if (gamePhase === 1) {
+                let t = Math.random() * 200 + 50;
+                // Vertical Gap tuned to 180px
+                pipes.push({x: 380, top: t, bot: t + 180, type: 'f', passed: false});
+            } else {
+                let h = Math.random() * 40 + 50;
+                pipes.push({x: 380, top: 460 - h, type: 'd', passed: false});
+            }
+        }
+
+        // Jumpable Meteor Logic
+        if (gamePhase === 2 && score >= 30 && frame % 145 === 0) {
+            meteors.push({ x: 380, y: 345 }); 
+        }
+
+        // Collisions: Pipes & Cactuses
+        pipes.forEach(p => {
+            p.x -= moveSpeed;
+            let birdR = 12; // Precise Hitbox
+            let pipeW = 60;
+
+            if (gamePhase === 1) {
+                if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY - birdR < p.top) { gameOver = true; shakeTime = 15; }
+                if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.bot) { gameOver = true; shakeTime = 15; }
+            } else {
+                if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.top) { hp = 0; gameOver = true; shakeTime = 25; }
+                // Phase 2 Skill-based Scoring
+                if (!p.passed && p.x + pipeW < birdX) {
+                    score++; p.passed = true;
+                    if (score >= 40) gameWon = true;
+                }
+            }
+        });
+
+        // Collisions: Meteors
+        meteors.forEach((m, idx) => {
+            m.x -= 4.2; 
+            m.y += 0.7; // Diagonally towards dinosaur
+            if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
+                hp -= 50; shakeTime = 15; meteors.splice(idx, 1);
+                if (hp <= 0) { hp = 0; gameOver = true; }
+            }
+        });
+
+        pipes = pipes.filter(p => p.x > -100);
+        meteors = meteors.filter(m => m.y < 520);
+    }
+
+    // DRAWING SECTION
+    pipes.forEach(p => {
+        if (pipeImg.complete) {
+            if (p.type === 'f') {
+                ctx.save(); ctx.translate(p.x+30, p.top); ctx.scale(1,-1);
+                ctx.drawImage(pipeImg, -30, 0, 60, p.top); ctx.restore();
+                ctx.drawImage(pipeImg, p.x, p.bot, 60, 500-p.bot);
+            } else {
+                ctx.drawImage(pipeImg, p.x, p.top, 60, 460-p.top);
+            }
+        }
+    });
+
+    meteors.forEach(m => {
+        ctx.fillStyle = "orange"; ctx.beginPath(); ctx.arc(m.x, m.y, 15, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(m.x, m.y, 7, 0, Math.PI*2); ctx.fill();
+    });
+
+    // Health Bar Phase 2
+    if (gamePhase === 2 && !gameOver) {
+        ctx.fillStyle = "black"; ctx.fillRect(100, 15, 160, 12);
+        ctx.fillStyle = hp > 60 ? "#2ecc71" : "#e74c3c";
+        ctx.fillRect(100, 15, (hp/200)*160, 12);
+    }
+
+    // Draw Bird/Dino
+    ctx.save(); ctx.translate(birdX, birdY);
+    if (gamePhase === 1) ctx.rotate(birdV * 0.1);
+    if (birdImg.complete) ctx.drawImage(birdImg, -25, -25, 50, 50);
+    ctx.restore();
+
+    ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.textAlign="left";
+    ctx.fillText("Score: "+score, 20, 40);
+    
+    if (gameOver || gameWon) runEndSequence();
+    ctx.restore();
+    requestAnimationFrame(loop);
+}
+
+function runEndSequence() {
+    canvas.style.filter = "invert(0)";
+    if (!endTriggered) {
+        endTriggered = true;
+        let win = score >= 40;
+        let m = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
+        let r = Math.floor(Math.random()*5);
+        memeImg.src = win ? "win.gif" : m[r];
+        memeImg.style.display = "block";
+        endSound.src = win ? "win.mp3" : "sound"+(r+1)+".mp3";
+        endSound.load(); endSound.play().catch(()=>{});
+        deaths++; localStorage.setItem("totalDeaths", deaths);
+        if (score > highScore) { highScore = score; localStorage.setItem("highScore", highScore); }
+        setTimeout(() => { showSkip = true; }, 1500);
+        setTimeout(() => { showScoreboard = true; }, 5000);
+    }
+    
+    if (showScoreboard) {
+        memeImg.style.display = "none";
+        ctx.fillStyle = "rgba(0,0,0,0.9)"; ctx.fillRect(40,100,280,300);
+        ctx.fillStyle = "white"; ctx.textAlign="center";
+        ctx.font = "bold 24px Arial"; ctx.fillText(score>=40?"WINNER!":"GAME OVER", 180, 150);
+        ctx.font = "18px Arial"; 
+        ctx.fillText("Score: "+score, 180, 200);
+        ctx.fillText("High Score: "+highScore, 180, 240);
+        ctx.fillText("Total Deaths: "+deaths, 180, 280);
+        ctx.fillStyle = "#70c5ce"; ctx.fillText("Tap to Restart", 180, 360);
+    }
+}
+
+loop();
+                    
