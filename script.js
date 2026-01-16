@@ -201,7 +201,7 @@ function loop() {
                 if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY - birdR < p.top) { gameOver = true; shakeTime = 15; }
                 if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.bot) { gameOver = true; shakeTime = 15; }
             } else {
-                if (birdX + birdR > p.x + 10 && birdX - birdR < (p.x + pipeW) - 10 && birdY + birdR > p.top + 5) { hp = 0; gameOver = true; shakeTime = 25; }
+                if (birdX + birdR > p.x + 10 && birdX - birdR < (p.x + pipeW) - 10 && birdY + birdR > p.top + 5) { damageTexts.push({ x: birdX, y: birdY, val: "-200", life: 1.0 }); hp = 0; gameOver = true; shakeTime = 25; }
                 // Phase 2 Skill-based Scoring
                 if (!p.passed && p.x + pipeW < birdX) {
                     score++; p.passed = true;
