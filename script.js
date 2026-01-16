@@ -195,22 +195,35 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
+// 2. UPDATED END SEQUENCE
 function runEndSequence() {
     canvas.style.filter = "invert(0)";
     if (!endTriggered) {
         endTriggered = true;
         let win = score >= 40;
-        let m = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
-        let r = Math.floor(Math.random()*5);
-        memeImg.src = win ? "win.gif" : m[r];
+        let r = Math.floor(Math.random() * 5);
+
+        // Prepare the meme and sound
+        memeImg.src = win ? "win.gif" : memeFiles[r];
+        let activeSound = win ? winSound : sounds[r];
+
+        // Play sound immediately
+        activeSound.currentTime = 0; 
+        activeSound.play().catch(e => console.log("Audio play failed:", e));
+
         memeImg.style.display = "block";
-        endSound.src = win ? "win.mp3" : "sound"+(r+1)+".mp3";
-        endSound.load(); endSound.play().catch(()=>{});
-        deaths++; localStorage.setItem("totalDeaths", deaths);
-        if (score > highScore) { highScore = score; localStorage.setItem("highScore", highScore); }
+        
+        deaths++; 
+        localStorage.setItem("totalDeaths", deaths);
+        if (score > highScore) { 
+            highScore = score; 
+            localStorage.setItem("highScore", highScore); 
+        }
+
         setTimeout(() => { showSkip = true; }, 1500);
         setTimeout(() => { showScoreboard = true; }, 5000);
     }
+    
     
     if (showScoreboard) {
         memeImg.style.display = "none";
