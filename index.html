@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Dino - Pro Spacing</title>
+  <title>Flappy Dino - Tuned Spacing</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <style>
     body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; }
@@ -105,21 +105,22 @@
 
       let moveSpeed = (gamePhase === 1 && score >= 15) ? 3.8 : 2.2;
       
-      // MUCH LARGER DISTANCE: spawnRate increased to 180 for Phase 1
-      let spawnRate = (gamePhase === 1) ? (score >= 15 ? 100 : 180) : 100;
+      // TUNED DISTANCE: 145 is the middle ground between too close and too far
+      let spawnRate = (gamePhase === 1) ? (score >= 15 ? 85 : 145) : 90;
 
       if (frame > 20 && frame % spawnRate === 0) {
         if (gamePhase === 1) {
           let t = Math.random() * 200 + 50;
-          pipes.push({x: 380, top: t, bot: t + 160, type: 'f', passed: false});
+          // VERTICAL GAP: Increased to 180 for easier passage
+          pipes.push({x: 380, top: t, bot: t + 180, type: 'f', passed: false});
         } else {
           let h = Math.random() * 40 + 50;
           pipes.push({x: 380, top: 460 - h, type: 'd', passed: false});
         }
       }
 
-      if (gamePhase === 2 && score >= 30 && frame % 150 === 0) {
-          meteors.push({ x: 380, y: 340 }); 
+      if (gamePhase === 2 && score >= 30 && frame % 145 === 0) {
+          meteors.push({ x: 380, y: 345 }); 
       }
 
       pipes.forEach(p => {
@@ -141,7 +142,7 @@
 
       meteors.forEach((m, idx) => {
           m.x -= 4.2; 
-          m.y += 0.7; // Slanted towards the ground
+          m.y += 0.7; 
           if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
               hp -= 50; shakeTime = 15; meteors.splice(idx, 1);
               if (hp <= 0) { hp = 0; gameOver = true; }
