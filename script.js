@@ -259,6 +259,23 @@ function loop() {
         ctx.fillStyle = hp > 60 ? "#2ecc71" : "#e74c3c";
         ctx.fillRect(100, 15, (hp/200)*160, 12);
     }
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.xv;
+        p.y += p.yv;
+        p.life -= 0.03; 
+
+        if (p.life <= 0) {
+            particles.splice(i, 1);
+        } else {
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.globalAlpha = 1.0;
 
     // Draw Bird/Dino
     ctx.save(); ctx.translate(birdX, birdY);
