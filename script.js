@@ -2,13 +2,25 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const memeImg = document.getElementById("meme-overlay");
 
-// Asset Loading
+// --- IMPROVED ASSET LOADING START ---
+// Images
 const pipeImg = new Image(); pipeImg.src = "pipe.png";
 const birdImg = new Image(); birdImg.src = "bird.png";
 const bgImg = new Image();   bgImg.src = "bg.png";
 
+// Game Sounds
 const flapSound = new Audio("flap.mp3");
-let endSound = new Audio();
+flapSound.load(); 
+
+// Meme Sounds Pre-loading
+const memeFiles = ["meme1.gif","meme2.gif","meme3.gif","meme4.gif","meme5.gif"];
+const sounds = memeFiles.map((_, i) => {
+    let a = new Audio(`sound${i+1}.mp3`);
+    a.load(); // This is the secret to removing the delay!
+    return a;
+});
+const winSound = new Audio("win.mp3");
+winSound.load();
 
 // Game Variables
 let birdX = 50, birdY = 250, birdV = 0;
