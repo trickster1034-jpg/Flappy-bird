@@ -201,7 +201,7 @@ function loop() {
                 if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY - birdR < p.top) { gameOver = true; shakeTime = 15; }
                 if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.bot) { gameOver = true; shakeTime = 15; }
             } else {
-                if (birdX + birdR > p.x + 10 && birdX - birdR < (p.x + pipeW) - 10 && birdY + birdR > p.top + 5) { damageTexts.push({ x: birdX, y: birdY, val: "-200", life: 1.0 }); hp = 0; gameOver = true; shakeTime = 25; }
+                if (birdX + birdR > p.x + 10 && birdX - birdR < (p.x + pipeW) - 10 && birdY + birdR > p.top + 5) { damageTexts.push({ x: birdX, y: birdY, val: "-200", life: 1.2 , size: 28 }); hp = 0; gameOver = true; shakeTime = 25; }
                 // Phase 2 Skill-based Scoring
                 if (!p.passed && p.x + pipeW < birdX) {
                     score++; p.passed = true;
@@ -215,7 +215,7 @@ function loop() {
             m.x -= 4.2; 
             m.y += 0.7; // Diagonally towards dinosaur
             if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
-                damageTexts.push({ x: birdX, y: birdY, val: "-50", life: 1.0 });
+                damageTexts.push({ x: birdX, y: birdY, val: "-50", life: 0.8 , size: 20 });
                 hp -= 50; shakeTime = 15; meteors.splice(idx, 1);
                 if (hp <= 0) { hp = 0; gameOver = true; }
             }
@@ -283,7 +283,7 @@ function loop() {
     ctx.globalAlpha = 1.0;
     for (let i = damageTexts.length - 1; i >= 0; i--) {
     let dt = damageTexts[i];
-    dt.y -= 1.5;    // Make it float up
+    dt.y -= 1.2;    // Make it float up
     dt.life -= 0.02; // Fade out speed
 
     if (dt.life <= 0) {
