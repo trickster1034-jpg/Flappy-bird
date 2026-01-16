@@ -48,44 +48,48 @@ function doTap() {
         return;
     }
 
-    // --- TRIPLE TAP LOGIC START ---
     let currentTime = Date.now();
-    if (currentTime - lastTapTime < 300) { // 300ms window for combo
+    if (currentTime - lastTapTime < 300) {
         tapCount++;
     } else {
-        tapCount = 1; // Reset if they tap too slowly
+        tapCount = 1;
     }
     lastTapTime = currentTime;
 
-     let effectColor = "";
+    // 1. CHOOSE COLOR
+    let effectColor = "";
     if (tapCount === 2) {
-        effectColor = "rgba(144, 238, 144, 0.7)"; // Gas (Light Green)
+        effectColor = "rgba(144, 238, 144, 0.7)"; // Gas
     } else if (tapCount === 4) {
-        effectColor = "rgba(255, 69, 0, 0.9)";   // Fire (Red-Orange)
-        tapCount = 0; // Reset after quadra
+        effectColor = "rgba(255, 69, 0, 0.9)";   // Fire
     }
 
+    // 2. SPAWN PARTICLES (Add the 'size' property here!)
     if (effectColor !== "") {
         for(let i=0; i<10; i++) {
             particles.push({
                 x: birdX - 5, 
                 y: birdY, 
-                xv: -Math.random() * 5 - 1, // Shoots backward
+                xv: -Math.random() * 5 - 1,
                 yv: (Math.random() - 0.5) * 3, 
                 life: 1.0,
-                color: effectColor
+                color: effectColor,
+                size: (tapCount === 4 ? 10 : 5) // Fire particles are bigger
             });
         }
     }
 
+    // 3. SOUNDS & RESETS
     if (tapCount === 3) {
         tripleSound.currentTime = 0;
         tripleSound.play().catch(e => {});
-        shakeTime = 10; // Extra feedback for the triple tap
-        tapCount = 0; // Reset after successful trigger
+        shakeTime = 10;
+        // DON'T reset tapCount to 0 here, let it reach 4!
+    } else if (tapCount === 4) {
+        tapCount = 0; // Reset ONLY after the 4th tap
     }
-    // --- TRIPLE TAP LOGIC END ---
 
+    // --- REST OF YOUR GAME LOGIC ---
     if (!gameStarted) { 
         gameStarted = true; 
         let t = Math.random() * 200 + 50;
@@ -99,8 +103,6 @@ function doTap() {
     if (gamePhase === 1) birdV = -5.2;
     else if (birdY >= 420) birdV = -10.0;
 }
-
-
 
 window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
 window.addEventListener("mousedown", doTap);
