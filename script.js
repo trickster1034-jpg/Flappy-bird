@@ -57,6 +57,8 @@ function doTap() {
     }
     lastTapTime = currentTime;
 
+    
+
     if (tapCount === 3) {
         tripleSound.currentTime = 0;
         tripleSound.play().catch(e => {});
