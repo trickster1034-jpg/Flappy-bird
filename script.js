@@ -34,6 +34,9 @@ let tapCount = 0;
 let lastTapTime = 0;
 let pipes = [], meteors = [], gameStarted = false, gameOver = false, gameWon = false;
 let gamePhase = 1, showScoreboard = false, endTriggered = false, showSkip = false;
+let particles = [];
+let tapCount = 0;
+let lastTapTime = 0;
 
 // Storage
 let highScore = localStorage.getItem("highScore") || 0;
