@@ -216,6 +216,16 @@ function loop() {
         ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(m.x, m.y, 7, 0, Math.PI*2); ctx.fill();
     });
 
+    // >>> THE WARNING LOGIC <<<
+    if (gamePhase === 1 && (score === 18 || score === 19)) {
+        if (Math.floor(frame / 20) % 2 === 0) {
+            ctx.fillStyle = "red";
+            ctx.font = "bold 30px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("PHASE 2 INCOMING!", 180, 150);
+        }
+    }
+
     // Health Bar Phase 2
     if (gamePhase === 2 && !gameOver) {
         ctx.fillStyle = "black"; ctx.fillRect(100, 15, 160, 12);
