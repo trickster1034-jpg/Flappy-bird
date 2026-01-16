@@ -76,6 +76,12 @@ function loop() {
     // Phase 1 Visual Surge
     if (gamePhase === 1 && score >= 15) {
         canvas.style.filter = "invert(1) hue-rotate(180deg)";
+        if (!surgePlayed) {
+            surgeSound.currentTime = 0;
+            surgeSound.play().catch(e => console.log("Surge sound blocked:", e));
+            surgePlayed = true; 
+            shakeTime = 20; // This makes the effect feel powerful
+        }
     } else {
         canvas.style.filter = "invert(0)";
     }
