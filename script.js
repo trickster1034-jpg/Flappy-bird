@@ -27,12 +27,22 @@ function doTap() {
         else if (showSkip) showScoreboard = true;
         return;
     }
-    if (!gameStarted) { gameStarted = true; return; }
-    flapSound.currentTime = 0; flapSound.play().catch(()=>{});
+    
+    if (!gameStarted) { 
+        gameStarted = true; 
+        // FIX: Spawn the first pipe immediately so there is no delay
+        let t = Math.random() * 200 + 50;
+        pipes.push({x: 400, top: t, bot: t + 180, type: 'f', passed: false});
+        return; 
+    }
+    
+    flapSound.currentTime = 0; 
+    flapSound.play().catch(()=>{});
     
     if (gamePhase === 1) birdV = -5.2;
-    else if (birdY >= 420) birdV = -10.5; // Dino Jump
+    else if (birdY >= 420) birdV = -10.5;
 }
+
 
 window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
 window.addEventListener("mousedown", doTap);
