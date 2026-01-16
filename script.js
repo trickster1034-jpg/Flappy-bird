@@ -57,7 +57,26 @@ function doTap() {
     }
     lastTapTime = currentTime;
 
-    
+     let effectColor = "";
+    if (tapCount === 2) {
+        effectColor = "rgba(144, 238, 144, 0.7)"; // Gas (Light Green)
+    } else if (tapCount === 4) {
+        effectColor = "rgba(255, 69, 0, 0.9)";   // Fire (Red-Orange)
+        tapCount = 0; // Reset after quadra
+    }
+
+    if (effectColor !== "") {
+        for(let i=0; i<10; i++) {
+            particles.push({
+                x: birdX - 5, 
+                y: birdY, 
+                xv: -Math.random() * 5 - 1, // Shoots backward
+                yv: (Math.random() - 0.5) * 3, 
+                life: 1.0,
+                color: effectColor
+            });
+        }
+    }
 
     if (tapCount === 3) {
         tripleSound.currentTime = 0;
