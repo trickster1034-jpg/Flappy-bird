@@ -215,6 +215,7 @@ function loop() {
             m.x -= 4.2; 
             m.y += 0.7; // Diagonally towards dinosaur
             if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
+                damageTexts.push({ x: birdX, y: birdY, val: "-50", life: 1.0 });
                 hp -= 50; shakeTime = 15; meteors.splice(idx, 1);
                 if (hp <= 0) { hp = 0; gameOver = true; }
             }
