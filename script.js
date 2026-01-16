@@ -74,7 +74,7 @@ function doTap() {
                 yv: (Math.random() - 0.5) * 3, 
                 life: 1.0,
                 color: effectColor,
-                size: (tapCount === 4 ? 10 : 5) // Fire particles are bigger
+                size: (tapCount === 4 ? 12 : 6) // Fire particles are bigger
             });
         }
     }
