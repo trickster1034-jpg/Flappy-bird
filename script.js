@@ -281,6 +281,23 @@ function loop() {
         }
     }
     ctx.globalAlpha = 1.0;
+    for (let i = damageTexts.length - 1; i >= 0; i--) {
+    let dt = damageTexts[i];
+    dt.y -= 1.5;    // Make it float up
+    dt.life -= 0.02; // Fade out speed
+
+    if (dt.life <= 0) {
+        damageTexts.splice(i, 1);
+    } else {
+        ctx.save();
+        ctx.globalAlpha = dt.life;
+        ctx.fillStyle = "red";
+        ctx.font = "bold 20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(dt.val, dt.x, dt.y);
+        ctx.restore();
+    }
+}
 
     // Draw Bird/Dino
     ctx.save(); ctx.translate(birdX, birdY);
