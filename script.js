@@ -201,7 +201,7 @@ function loop() {
                 if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY - birdR < p.top) { gameOver = true; shakeTime = 15; }
                 if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.bot) { gameOver = true; shakeTime = 15; }
             } else {
-                if (birdX + birdR > p.x + 10 && birdX - birdR < (p.x + pipeW) - 10 && birdY + birdR > p.top + 5) { damageTexts.push({ x: birdX, y: birdY, val: "-200", life: 1.2 , size: 28 }); hp = 0; gameOver = true; shakeTime = 25; }
+                if (birdX + birdR > p.x + 10 && birdX - birdR < (p.x + pipeW) - 10 && birdY + birdR > p.top + 5) { damageTexts.push({ x: birdX, y: birdY, val: "-200", life: 1.2 , size: 28 }); hp = 0; gameOver = true; shakeTime = 40; }
                 // Phase 2 Skill-based Scoring
                 if (!p.passed && p.x + pipeW < birdX) {
                     score++; p.passed = true;
@@ -217,7 +217,7 @@ function loop() {
             if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
                 damageTexts.push({ x: birdX, y: birdY, val: "-50", life: 0.8 , size: 20 });
                 hp -= 50; shakeTime = 15; meteors.splice(idx, 1);
-                if (hp <= 0) { hp = 0; gameOver = true; }
+                if (hp <= 0) { hp = 0; gameOver = true; shakeTime = 45; }
             }
         });
 
