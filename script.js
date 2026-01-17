@@ -244,6 +244,41 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
         meteors = meteors.filter(m => m.y < 520);
     }
 
+            // --- BOSS & ARROW LOGIC ---
+        if (gamePhase === 2 && score >= 30) {
+            boss.active = true;
+            // Slide onto screen from right
+            if (boss.x > 280) boss.x -= 1.5; 
+            
+            // Follow dinosaur's height (Targeting)
+            let targetY = birdY - 10;
+            boss.y += (targetY - boss.y) * 0.05;
+
+            // Shooting logic
+            boss.shootTimer++;
+            if (boss.shootTimer > 100) { // Fires every ~1.6 seconds
+                arrows.push({ x: boss.x, y: boss.y, speed: 5.5 });
+                boss.shootTimer = 0;
+            }
+        }
+
+        // Arrow Movement & Collision
+        for (let i = arrows.length - 1; i >= 0; i--) {
+            let a = arrows[i];
+            a.x -= a.speed; // Fly left
+
+            // Collision check
+            if (Math.hypot(birdX - a.x, birdY - a.y) < 20) {
+                damageTexts.push({ x: birdX, y: birdY, val: "-20", life: 0.8, size: 20 });
+                hp -= 20; shakeTime = 10;
+                arrows.splice(i, 1);
+                if (hp <= 0) { hp = 0; gameOver = true; shakeTime = 40; }
+                continue;
+            }
+            if (a.x < -20) arrows.splice(i, 1);
+        }
+    
+
     // DRAWING SECTION
     pipes.forEach(p => {
         if (pipeImg.complete) {
@@ -261,6 +296,33 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
         ctx.fillStyle = "orange"; ctx.beginPath(); ctx.arc(m.x, m.y, 15, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(m.x, m.y, 7, 0, Math.PI*2); ctx.fill();
     });
+
+        // --- DRAW ARROWS ---
+    arrows.forEach(a => {
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(a.x, a.y, 12, 3); // Arrow body
+        ctx.fillStyle = "red";
+        ctx.beginPath(); // Arrow head
+        ctx.moveTo(a.x, a.y - 4);
+        ctx.lineTo(a.x - 8, a.y + 1.5);
+        ctx.lineTo(a.x, a.y + 7);
+        ctx.fill();
+    });
+
+    // --- DRAW BOSS ---
+    if (boss.active) {
+        ctx.fillStyle = "purple";
+        ctx.beginPath();
+        ctx.moveTo(boss.x, boss.y - 15);
+        ctx.lineTo(boss.x + 15, boss.y);
+        ctx.lineTo(boss.x, boss.y + 15);
+        ctx.lineTo(boss.x - 15, boss.y);
+        ctx.fill();
+        // Eye
+        ctx.fillStyle = "cyan";
+        ctx.beginPath(); ctx.arc(boss.x - 4, boss.y, 4, 0, Math.PI*2); ctx.fill();
+    }
+    
 
     // >>> PASTE THE WARNING LOGIC HERE <<<
     if (gamePhase === 1 && (score === 18 || score === 19)) {
