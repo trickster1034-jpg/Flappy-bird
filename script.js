@@ -350,14 +350,26 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
 
         // --- DRAW ARROWS ---
     arrows.forEach(a => {
+        ctx.save();
+        // 1. Move the "drawing paper" to where the arrow is
+        ctx.translate(a.x, a.y);
+        
+        // 2. Spin the paper to the angle we calculated when it was fired
+        ctx.rotate(a.angle); 
+        
+        // 3. Draw the arrow at (0,0) because we translated the context
         ctx.fillStyle = "yellow";
-        ctx.fillRect(a.x, a.y, 12, 3); // Arrow body
+        ctx.fillRect(0, -1.5, 12, 3); // Arrow body
+        
         ctx.fillStyle = "red";
         ctx.beginPath(); // Arrow head
-        ctx.moveTo(a.x, a.y - 4);
-        ctx.lineTo(a.x - 8, a.y + 1.5);
-        ctx.lineTo(a.x, a.y + 7);
+        ctx.moveTo(0, -5);
+        ctx.lineTo(-10, 0); // Points toward the bird
+        ctx.lineTo(0, 5);
         ctx.fill();
+        
+        // 4. Reset the paper so other things don't draw crooked
+        ctx.restore();
     });
 
     // --- DRAW BOSS ---
