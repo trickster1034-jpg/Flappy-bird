@@ -287,17 +287,21 @@ function loop() {
     dt.life -= 0.02; // Fade out speed
 
     if (dt.life <= 0) {
-        damageTexts.splice(i, 1);
-    } else {
-        ctx.save();
-        ctx.globalAlpha = dt.life;
-        ctx.fillStyle = "red";
-        ctx.font = "bold 20px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(dt.val, dt.x, dt.y);
-        ctx.restore();
+            damageTexts.splice(i, 1);
+        } else {
+            ctx.save();
+            ctx.globalAlpha = dt.life;
+            ctx.fillStyle = "#ff0000"; 
+            ctx.font = `bold ${dt.size}px Arial`;
+            ctx.textAlign = "center";
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.strokeText(dt.val, dt.x, dt.y);
+            ctx.fillText(dt.val, dt.x, dt.y);
+            ctx.restore();
+        }
     }
-}
+    ctx.globalAlpha = 1.0;
 
     // Draw Bird/Dino
     ctx.save(); ctx.translate(birdX, birdY);
