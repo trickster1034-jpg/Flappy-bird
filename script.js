@@ -38,7 +38,7 @@ let particles = [];
 let damageTexts = [];
 let boss = { active: false, x: 380, y: 100, targetY: 100, shootTimer: 0 };
 let arrows = [];
-
+let potions = [];
 
 
 // Storage
@@ -51,7 +51,8 @@ function doTap() {
         // RESET BOSS SYSTEM BEFORE RESTART
         arrows = [];         // Clears any arrows on screen
         boss.active = false;  // Disables the boss entity
-        boss.x = 400;        // Moves him back to the right-side starting position
+        boss.x = 400;  // Moves him back to the right-side starting position
+        potions = [];
         if (showScoreboard) location.reload(); 
         else if (showSkip) showScoreboard = true;
         return;
