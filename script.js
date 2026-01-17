@@ -247,6 +247,36 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
             }
         });
 
+                // --- HEALTH POTION LOGIC ---
+        if (gamePhase === 2 && frame % 400 === 0) {
+            // Spawns at a random height so you have to move for it
+            potions.push({ x: 380, y: Math.random() * 200 + 150, speed: 2.5 });
+        }
+
+        for (let i = potions.length - 1; i >= 0; i--) {
+            let p = potions[i];
+            p.x -= p.speed;
+
+            // Draw the Potion
+            ctx.fillStyle = "#2ecc71"; // Green
+            ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "white"; // The "+" sign
+            ctx.fillRect(p.x - 2, p.y - 6, 4, 12);
+            ctx.fillRect(p.x - 6, p.y - 2, 12, 4);
+
+            // Collision with Bird
+            if (Math.hypot(birdX - p.x, birdY - p.y) < 20) {
+                hp = Math.min(200, hp + 50); // Heals 50, but caps at 200
+                damageTexts.push({ x: birdX, y: birdY, val: "+50 HP", life: 1.0, size: 22 });
+                potions.splice(i, 1);
+                continue;
+            }
+
+            // Remove if off screen
+            if (p.x < -20) potions.splice(i, 1);
+        }
+        
+
         pipes = pipes.filter(p => p.x > -100);
         meteors = meteors.filter(m => m.y < 520);
     }
