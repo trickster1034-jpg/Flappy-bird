@@ -112,7 +112,9 @@ function doTap() {
     if (gamePhase === 1) {
         // Boost jump power from -5.2 to -6.2 when the heavy gravity (score 15) kicks in
         birdV = (score >= 15) ? -6.2 : -5.2;
-    else if (birdY >= 420) birdV = -10.0;
+    } else {
+        if (birdY >= 420) birdV = -10.0;
+    }
 }
 
 window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
