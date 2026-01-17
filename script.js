@@ -293,16 +293,30 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
 
             // Shooting logic
             boss.shootTimer++;
-            if (boss.shootTimer > 100) { // Fires every ~1.6 seconds
-                arrows.push({ x: boss.x, y: boss.y, speed: 5.5 });
-                boss.shootTimer = 0;
-            }
-        }
-
+            if (boss.shootTimer > 90) { // Fires every ~1.6 seconds
+                 // 1. Calculate the angle toward the bird
+        let dx = birdX - boss.x;
+        let dy = birdY - boss.y;
+        let angle = Math.atan2(dy, dx);
+        
+        // 2. Give the arrow X and Y speeds based on that angle
+        let speed = 6;
+        arrows.push({ 
+            x: boss.x, 
+            y: boss.y, 
+            vx: Math.cos(angle) * speed, 
+            vy: Math.sin(angle) * speed,
+            angle: angle // Store angle for drawing
+        });
+        boss.shootTimer = 0;
+    }
+}
+ 
         // Arrow Movement & Collision
         for (let i = arrows.length - 1; i >= 0; i--) {
             let a = arrows[i];
-            a.x -= a.speed; // Fly left
+            a.x += a.vx; // Move towards bird X
+            a.y += a.vy; // Move towards bird Y
 
             // Collision check
             if (Math.hypot(birdX - a.x, birdY - a.y) < 20) {
