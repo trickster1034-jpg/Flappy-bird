@@ -188,8 +188,10 @@ function loop() {
         }
 
         // Jumpable Meteor Logic
-        if (gamePhase === 2 && score >= 30 && frame % 145 === 0) {
-            meteors.push({ x: 380, y: 345 }); 
+        if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
+    // Meteors get faster as score increases
+    let meteorSpeedBoost = (score - 20) * 0.1; 
+    meteors.push({ x: 380, y: 345, speed: 4.2 + meteorSpeedBoost }); 
         }
 
         // Collisions: Pipes & Cactuses
