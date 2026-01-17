@@ -187,12 +187,16 @@ function loop() {
             }
         }
 
-        // Jumpable Meteor Logic
-        if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
-    // Meteors get faster as score increases
-    let meteorSpeedBoost = (score - 20) * 0.1; 
-    meteors.push({ x: 380, y: 345, speed: 4.2 + meteorSpeedBoost }); 
-        }
+        // Meteor Spawning
+if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
+    let dynamicSpeed = 4.2 + (score - 20) * 0.2; // Adds 0.2 speed for every point past 20
+    meteors.push({ 
+        x: 380, 
+        y: 345, 
+        speed: dynamicSpeed // We save the speed INSIDE the meteor object
+    }); 
+}
+        
 
         // Collisions: Pipes & Cactuses
         pipes.forEach(p => {
