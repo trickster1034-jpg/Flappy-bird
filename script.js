@@ -282,35 +282,36 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
     }
 
             // --- BOSS & ARROW LOGIC ---
-        if (gamePhase === 2 && score >= 30) {
-            boss.active = true;
-            // Slide onto screen from right
-            if (boss.x > 280) boss.x -= 1.5; 
-            
-            // Follow dinosaur's height (Targeting)
-            let targetY = birdY - 10;
-            boss.y += (targetY - boss.y) * 0.05;
+       if (gamePhase === 2 && score >= 30) {
+    boss.active = true;
+    
+    // Boss moves faster as you get closer to 40
+    let difficultyMult = 1 + (score - 30) * 0.1; 
+    if (boss.x > 280) boss.x -= (1.5 * difficultyMult); 
+    
+    let targetY = birdY - 10;
+    boss.y += (targetY - boss.y) * (0.05 * difficultyMult);
 
-            // Shooting logic
-            boss.shootTimer++;
-            if (boss.shootTimer > 90) { // Fires every ~1.6 seconds
-                 // 1. Calculate the angle toward the bird
+    boss.shootTimer++;
+    // Shooting speed increases as score goes up
+    if (boss.shootTimer > (90 / difficultyMult)) {
         let dx = birdX - boss.x;
         let dy = birdY - boss.y;
         let angle = Math.atan2(dy, dx);
         
-        // 2. Give the arrow X and Y speeds based on that angle
-        let speed = 6;
+        // Arrows fly faster as you near score 40
+        let arrowSpeed = 6 * difficultyMult; 
+
         arrows.push({ 
             x: boss.x, 
             y: boss.y, 
-            vx: Math.cos(angle) * speed, 
-            vy: Math.sin(angle) * speed,
-            angle: angle // Store angle for drawing
+            vx: Math.cos(angle) * arrowSpeed, 
+            vy: Math.sin(angle) * arrowSpeed,
+            angle: angle 
         });
         boss.shootTimer = 0;
     }
-}
+} 
  
         // Arrow Movement & Collision
         for (let i = arrows.length - 1; i >= 0; i--) {
