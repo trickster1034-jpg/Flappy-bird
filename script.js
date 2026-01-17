@@ -48,6 +48,10 @@ let shakeTime = 0;
 
 function doTap() {
     if (gameOver || gameWon) {
+        // RESET BOSS SYSTEM BEFORE RESTART
+        arrows = [];         // Clears any arrows on screen
+        boss.active = false;  // Disables the boss entity
+        boss.x = 400;        // Moves him back to the right-side starting position
         if (showScoreboard) location.reload(); 
         else if (showSkip) showScoreboard = true;
         return;
