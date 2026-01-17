@@ -326,7 +326,7 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
                 if (hp <= 0) { hp = 0; gameOver = true; shakeTime = 40; }
                 continue;
             }
-            if (a.x < -20) arrows.splice(i, 1);
+            if (a.x < -50 || a.x > 400 || a.y < -50 || a.y > 600) arrows.splice(i, 1);
         }
     
 
