@@ -102,7 +102,9 @@ function doTap() {
     flapSound.currentTime = 0; 
     flapSound.play().catch(()=>{});
     
-    if (gamePhase === 1) birdV = -5.2;
+    if (gamePhase === 1) {
+        // Boost jump power from -5.2 to -6.2 when the heavy gravity (score 15) kicks in
+        birdV = (score >= 15) ? -6.2 : -5.2;
     else if (birdY >= 420) birdV = -10.0;
 }
 
