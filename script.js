@@ -36,6 +36,9 @@ let pipes = [], meteors = [], gameStarted = false, gameOver = false, gameWon = f
 let gamePhase = 1, showScoreboard = false, endTriggered = false, showSkip = false;
 let particles = [];
 let damageTexts = [];
+let boss = { active: false, x: 380, y: 100, targetY: 100, shootTimer: 0 };
+let arrows = [];
+
 
 
 // Storage
