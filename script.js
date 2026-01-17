@@ -161,7 +161,14 @@ function loop() {
         }
 
         // Gravity & Physics
-        birdV += (gamePhase === 1 ? 0.26 : 0.45);
+        let gravityVal = 0.26; // Default Phase 1 gravity
+        if (gamePhase === 1 && score >= 15) {
+            gravityVal = 0.42; // HARD MODE: Fall faster, tap rapidly!
+        } else if (gamePhase === 2) {
+            gravityVal = 0.45; // Dino phase gravity
+        }
+
+        birdV += gravityVal;
         birdY += birdV;
 
         if (gamePhase === 1) {
@@ -172,8 +179,8 @@ function loop() {
         }
 
         // Difficulty Tuning
-        let moveSpeed = (gamePhase === 1 && score >= 15) ? 3.8 : 2.2;
-        let spawnRate = (gamePhase === 1) ? (score >= 15 ? 85 : 145) : 90;
+        let moveSpeed = (gamePhase === 1 && score >= 15) ? 4.8 : 2.2;
+        let spawnRate = (gamePhase === 1) ? (score >= 15 ? 65 : 145) : 90;
 
         // Obstacle Spawning
         if (frame > 20 && frame % spawnRate === 0) {
