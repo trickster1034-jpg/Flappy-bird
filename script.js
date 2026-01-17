@@ -219,7 +219,7 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
 
         // Collisions: Meteors
         meteors.forEach((m, idx) => {
-            m.x -= 4.2; 
+            m.x -= m.speed; 
             m.y += 0.7; // Diagonally towards dinosaur
             if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
                 damageTexts.push({ x: birdX, y: birdY, val: "-50", life: 0.8 , size: 20 });
