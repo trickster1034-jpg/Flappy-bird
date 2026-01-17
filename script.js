@@ -115,7 +115,8 @@ function loop() {
 
     // Screen Shake Effect
     if (shakeTime > 0) {
-        ctx.translate(Math.random() * 6 - 3, Math.random() * 6 - 3);
+        let intensity = 7; // Increase this number for crazier shaking
+        ctx.translate(Math.random() * intensity - intensity/2, Math.random() * intensity - intensity/2);
         shakeTime--;
     }
 
