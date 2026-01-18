@@ -46,6 +46,7 @@ let isTransitioning = false;
 let transitionZoom = 1;
 let flashAlpha = 0; // For the white screen flash
 let transitionTimer = 0; 
+let transitionFrames = 0;
 
 
 class Particle {
@@ -58,15 +59,28 @@ class Particle {
         this.speed = Math.random() * 0.1 + 0.05; // How fast they "fly"
         this.color = "yellow"; // Match your bird's color
     }
-    update() {
+        update() {
+        // We add a tiny bit (+ 0.01) to ensure speed is never truly 0
+        let easing = this.speed + 0.01; 
+        
         // Move toward the ground target
-        this.x += (this.targetX - this.x) * this.speed;
-        this.y += (this.targetY - this.y) * this.speed;
+        this.x += (this.targetX - this.x) * easing;
+        this.y += (this.targetY - this.y) * easing;
+
+        // If a particle is "basically there", snap it to the target
+        if (Math.abs(this.y - this.targetY) < 1) {
+            this.y = this.targetY;
+        }
     }
     draw() {
-        ctx.fillStyle = this.color;
+        // Use a bright color to make sure they are visible against the BG
+        ctx.fillStyle = "yellow"; 
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "white";
         ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.shadowBlur = 0; // Reset shadow so it doesn't lag the game
     }
+
 }
 
 
