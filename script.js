@@ -508,31 +508,43 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
     }
     ctx.globalAlpha = 1.0;
 
-        // --- DRAW BIRD/DINO + SHIELD ---
+           // --- DRAW BIRD/DINO + PULSING SHIELD ---
     ctx.save(); 
     ctx.translate(birdX, birdY);
     
-    // Rotate bird in Phase 1 (Flappy Mode)
+    // Rotate bird only in Phase 1
     if (gamePhase === 1) ctx.rotate(birdV * 0.1);
     
-    // Draw the actual image
+    // 1. Draw the Bird/Dino Image
     if (birdImg.complete) ctx.drawImage(birdImg, -25, -25, 50, 50);
 
-    // DRAW SHIELD BUBBLE (Only if hasShield is true)
+    // 2. DRAW THE PULSING SHIELD
     if (hasShield) {
+        // This math creates a pulse between 30 and 36 pixels
+        let pulse = 33 + Math.sin(Date.now() / 150) * 4;
+        
         ctx.beginPath();
-        // A pulsing blue bubble
-        ctx.arc(0, 0, 32 + Math.sin(Date.now()/100)*3, 0, Math.PI*2);
-        ctx.strokeStyle = "rgba(52, 152, 219, 0.8)"; // Bright blue
+        ctx.arc(0, 0, pulse, 0, Math.PI * 2);
+        
+        // Outer Glow Line
+        ctx.strokeStyle = "rgba(52, 152, 219, 0.8)"; 
         ctx.lineWidth = 3;
         ctx.stroke();
         
-        // Faint blue glow inside
+        // Inner Transparent Glow
         ctx.fillStyle = "rgba(52, 152, 219, 0.2)";
         ctx.fill();
+        
+        // OPTIONAL: Add a white "shimmer" line
+        ctx.beginPath();
+        ctx.arc(0, 0, pulse - 5, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
     }
     
     ctx.restore();
+ 
     
 
     ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.textAlign="left";
