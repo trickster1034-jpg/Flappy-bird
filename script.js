@@ -185,21 +185,14 @@ function loop() {
         if (frame % 60 === 0 && gamePhase === 1) {
             score++;
             // TRIGGER TRANSITION INSTEAD OF INSTANT SWITCH
-        if (score === 20 && !isTransitioning) { 
-        console.log("Starting Transition at birdY: " + birdY);
-        isTransitioning = true;
-        transitionTimer = 0; // Reset the fail-safe
-        
-        // CREATE PARTICLES FIRST
-        for (let i = 0; i < 30; i++) {
-            transitionParticles.push(new Particle(birdX, birdY));
+        if (score === 20) { 
+    gamePhase = 2; 
+    birdY = 425;  // Snap to ground
+    birdV = 0; 
+    pipes = [];   // Clear Phase 1 pipes
+    flashAlpha = 1.0; // Keep the white flash for a smooth "pop"
         }
-        
-        // HIDE BIRD SECOND
-        birdY = -1000; 
-    }
-
-        }
+     }
 
         // Gravity & Physics
         let gravityVal = 0.26; // Default Phase 1 gravity
