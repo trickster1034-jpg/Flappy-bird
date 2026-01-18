@@ -54,7 +54,7 @@ class Particle {
         this.targetX = 50;  // Where the Dino starts
         this.targetY = 425; // The ground
         this.size = Math.random() * 5 + 2;
-        this.speed = Math.random() * 0.05 + 0.02; // How fast they "fly"
+        this.speed = Math.random() * 0.1 + 0.05; // How fast they "fly"
         this.color = "yellow"; // Match your bird's color
     }
     update() {
