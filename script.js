@@ -197,45 +197,44 @@ function loop() {
         ctx.drawImage(bgImg, bgX, 0, 360, 500);
         ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
     }
-
-    if (isTransitioning) {
-    // 1. Calculate zoom based on particle position
-    let leadP = transitionParticles[0];
-    if (leadP) {
-        // As particles go down, we zoom in slightly (from 1.0 to 1.2)
-        transitionZoom = 1 + (leadP.y / 425) * 0.2;
-        
-        // Follow the particles vertically
-        let scrollY = (leadP.y - 250) * 0.5;
-        ctx.translate(0, -scrollY);
-        ctx.scale(transitionZoom, transitionZoom);
-    }
-
-    // 2. Draw Background
-    if (bgImg.complete) {
+        if (isTransitioning) {
+        // 1. Keep background moving so it doesn't look frozen
+        bgX -= (gamePhase === 1 ? 1 : 2.5);
+        if (bgX <= -360) bgX = 0;
         ctx.drawImage(bgImg, bgX, 0, 360, 500);
         ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
+
+        // 2. Update and Draw particles
+        transitionParticles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+
+        // 3. Fail-safe landing check
+        let shouldLand = false;
+        if (transitionParticles.length > 0) {
+            let leadP = transitionParticles[0];
+            // Check if they are close to the ground
+            if (Math.abs(leadP.y - 425) < 10) shouldLand = true;
+        } else {
+            // If there are NO particles for some reason, force the land
+            shouldLand = true;
+        }
+
+        if (shouldLand) {
+            flashAlpha = 1.0; 
+            isTransitioning = false;
+            transitionParticles = [];
+            gamePhase = 2;
+            birdY = 425; 
+            birdV = 0;
+            pipes = []; 
+        }
+
+        ctx.restore(); 
+        return; // This pauses the rest of the game
     }
 
-    // 3. Update & Draw Particles
-    transitionParticles.forEach(p => {
-        p.update();
-        p.draw();
-    });
-
-    // 4. Check for landing and trigger Flash
-    if (leadP && Math.abs(leadP.y - 425) < 10) {
-        flashAlpha = 1.0; // Trigger the white flash
-        isTransitioning = false;
-        transitionParticles = [];
-        gamePhase = 2;
-        birdY = 425; 
-        birdV = 0;
-        pipes = []; 
-    }
-    ctx.restore(); 
-    return; 
-}
 
 
     if (!gameStarted) {
