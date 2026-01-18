@@ -230,10 +230,12 @@ if (gamePhase === 1) {
         // Obstacle Spawning
         if (frame > 20 && frame % spawnRate === 0) {
             if (gamePhase === 1) {
-                let t = Math.random() * 200 + 50;
-                // Vertical Gap tuned to 180px
+                // Gap is between 50 and 250
+                let t = Math.random() * 200 + 50; 
+                // Using 'bot' to match your existing logic
                 pipes.push({x: 380, top: t, bot: t + 180, type: 'f', passed: false});
             } else {
+                // Dino obstacles (Phase 2)
                 let h = Math.random() * 40 + 50;
                 pipes.push({x: 380, top: 460 - h, type: 'd', passed: false});
             }
