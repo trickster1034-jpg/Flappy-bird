@@ -651,6 +651,13 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
     ctx.fillText("Score: "+score, 20, 40);
     
     if (gameOver || gameWon) runEndSequence();
+    // --- Screen Flash Effect ---
+if (flashAlpha > 0) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    flashAlpha -= 0.05; // Fade the flash out slowly
+}
+    
     ctx.restore();
     requestAnimationFrame(loop);
 }
