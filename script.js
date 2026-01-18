@@ -307,7 +307,8 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
 
                 // --- SHIELD SPAWNING ---
         if (gamePhase === 2 && frame % 600 === 0 && !hasShield) {
-            shields.push({ x: 380, y: Math.random() * 200 + 150, speed: 2.2 });
+            let spawnY = Math.random() * 150 + 150; // Keeps shield within reach
+    shields.push({ x: 380, y: spawnY, speed: 2.2 });
         }
 
         for (let i = shields.length - 1; i >= 0; i--) {
