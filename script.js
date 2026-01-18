@@ -41,47 +41,7 @@ let arrows = [];
 let potions = [];
 let shields = [];
 let hasShield = false;
-let transitionParticles = [];
-let isTransitioning = false;
-let transitionZoom = 1;
-let flashAlpha = 0; // For the white screen flash
-let transitionTimer = 0; 
-let transitionFrames = 0;
 
-
-class Particle {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.targetX = 50;  // Where the Dino starts
-        this.targetY = 425; // The ground
-        this.size = Math.random() * 5 + 2;
-        this.speed = Math.random() * 0.1 + 0.05; // How fast they "fly"
-        this.color = "yellow"; // Match your bird's color
-    }
-        update() {
-        // We add a tiny bit (+ 0.01) to ensure speed is never truly 0
-        let easing = this.speed + 0.01; 
-        
-        // Move toward the ground target
-        this.x += (this.targetX - this.x) * easing;
-        this.y += (this.targetY - this.y) * easing;
-
-        // If a particle is "basically there", snap it to the target
-        if (Math.abs(this.y - this.targetY) < 1) {
-            this.y = this.targetY;
-        }
-    }
-    draw() {
-        // Use a bright color to make sure they are visible against the BG
-        ctx.fillStyle = "yellow"; 
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "white";
-        ctx.fillRect(this.x, this.y, this.size, this.size);
-        ctx.shadowBlur = 0; // Reset shadow so it doesn't lag the game
-    }
-
-}
 
 
 
