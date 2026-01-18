@@ -276,8 +276,10 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
 
                 // --- HEALTH POTION LOGIC ---
         if (gamePhase === 2 && frame % 400 === 0) {
-            // Spawns at a random height so you have to move for it
-            potions.push({ x: 380, y: Math.random() * 200 + 150, speed: 2.5 });
+            // Math.random() * (MaxHeight - MinHeight) + MinHeight
+    // 350 is the ground level, so 150 to 300 keeps it reachable
+    let spawnY = Math.random() * 150 + 150; 
+    potions.push({ x: 380, y: spawnY, speed: 2.5 });
         }
 
         for (let i = potions.length - 1; i >= 0; i--) {
