@@ -285,6 +285,7 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
         for (let i = potions.length - 1; i >= 0; i--) {
             let p = potions[i];
             p.x -= p.speed;
+            p.y += 0.3;
 
             // Draw the Potion
             ctx.fillStyle = "#2ecc71"; // Green
@@ -314,6 +315,7 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
         for (let i = shields.length - 1; i >= 0; i--) {
             let s = shields[i];
             s.x -= s.speed;
+            
 
             // Draw Shield Item
             ctx.fillStyle = "#3498db"; // Blue
