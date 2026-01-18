@@ -41,9 +41,7 @@ let arrows = [];
 let potions = [];
 let shields = [];
 let hasShield = false;
-
-
-
+let flashAlpha = 0; 
 
 // Storage
 let highScore = localStorage.getItem("highScore") || 0;
