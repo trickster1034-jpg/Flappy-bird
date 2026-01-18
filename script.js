@@ -198,43 +198,48 @@ function loop() {
         ctx.drawImage(bgImg, bgX, 0, 360, 500);
         ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
     }
-        if (isTransitioning) {
-        // 1. Keep background moving so it doesn't look frozen
-        bgX -= (gamePhase === 1 ? 1 : 2.5);
+            if (isTransitioning) {
+        transitionTimer++; // Count frames
+
+        // 1. Force background to draw and scroll
+        bgX -= 2;
         if (bgX <= -360) bgX = 0;
         ctx.drawImage(bgImg, bgX, 0, 360, 500);
         ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
 
-        // 2. Update and Draw particles
+        // 2. Draw Particles
         transitionParticles.forEach(p => {
             p.update();
             p.draw();
         });
 
-        // 3. Fail-safe landing check
-        let shouldLand = false;
+        // 3. THE UNFREEZER: Landing Logic
+        let finished = false;
+        
+        // If particles reach the ground
         if (transitionParticles.length > 0) {
-            let leadP = transitionParticles[0];
-            // Check if they are close to the ground
-            if (Math.abs(leadP.y - 425) < 10) shouldLand = true;
-        } else {
-            // If there are NO particles for some reason, force the land
-            shouldLand = true;
+            let p = transitionParticles[0];
+            if (p.y > 410) finished = true; 
         }
 
-        if (shouldLand) {
-            flashAlpha = 1.0; 
+        // FAIL-SAFE: If it takes longer than 1.5 seconds, just start the game!
+        if (transitionTimer > 100) finished = true;
+
+        if (finished) {
+            console.log("Transition Finished - Starting Phase 2");
             isTransitioning = false;
-            transitionParticles = [];
+            transitionTimer = 0; 
             gamePhase = 2;
-            birdY = 425; 
+            birdY = 425; // Put Dino on ground
             birdV = 0;
             pipes = []; 
+            flashAlpha = 1.0; // Trigger the white flash
         }
 
         ctx.restore(); 
-        return; // This pauses the rest of the game
+        return; // This is the 'Freeze' - if 'finished' never becomes true, we stay here.
     }
+
 
 
 
@@ -250,20 +255,20 @@ function loop() {
         if (frame % 60 === 0 && gamePhase === 1) {
             score++;
             // TRIGGER TRANSITION INSTEAD OF INSTANT SWITCH
-    if (score === 20 && !isTransitioning) { 
+        if (score === 20 && !isTransitioning) { 
+        console.log("Starting Transition at birdY: " + birdY);
         isTransitioning = true;
-        console.log("Transition Started!");
-        // Create the particles at the bird's current height
+        transitionTimer = 0; // Reset the fail-safe
+        
+        // CREATE PARTICLES FIRST
         for (let i = 0; i < 30; i++) {
             transitionParticles.push(new Particle(birdX, birdY));
         }
         
-        // Move the "bird" off-screen so it disappears during the animation
+        // HIDE BIRD SECOND
         birdY = -1000; 
-        
-        // Note: We DON'T set gamePhase = 2 here yet. 
-        // We wait for the particles to finish their flight!
     }
+
         }
 
         // Gravity & Physics
