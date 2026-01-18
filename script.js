@@ -209,8 +209,27 @@ function loop() {
         }
 
         // Difficulty Tuning
-        let moveSpeed = (gamePhase === 1 && score >= 15) ? 4.8 : 2.2;
-        let spawnRate = (gamePhase === 1) ? (score >= 15 ? 65 : 145) : 90;
+        let moveSpeed;
+        let spawnRate;
+
+if (gamePhase === 1) {
+    if (score < 15) {
+        // GRADUAL: Starts at 2.2, adds 0.1 per point. 
+        // At score 14, speed will be 3.6.
+        moveSpeed = 2.2 + (score * 0.1); 
+        
+        // SPAWN RATE: Pipes get closer together gradually (from 145 down to 75)
+        spawnRate = 145 - (score * 5); 
+    } else {
+        // CRAZY MODE: The high-speed jump at score 15
+        moveSpeed = 4.8;
+        spawnRate = 65;
+    }
+} else {
+    // Phase 2: Boss Fight settings
+    moveSpeed = 2.2;
+    spawnRate = 90;
+}
 
         // Obstacle Spawning
         if (frame > 20 && frame % spawnRate === 0) {
