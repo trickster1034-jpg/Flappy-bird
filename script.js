@@ -125,6 +125,20 @@ function doTap() {
 window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
 window.addEventListener("mousedown", doTap);
 
+function spawnShieldBreak() {
+    for(let i=0; i<15; i++) {
+        particles.push({
+            x: birdX, 
+            y: birdY, 
+            xv: (Math.random() - 0.5) * 8, // Burst in all directions
+            yv: (Math.random() - 0.5) * 8, 
+            life: 1.0,
+            color: "#3498db", // Shield Blue
+            size: 4 + Math.random() * 4
+        });
+    }
+}
+
 function loop() {
     ctx.save();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -247,6 +261,8 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
             if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
                 if (hasShield) {
                     hasShield = false; // Shield breaks, HP stays safe
+                    spawnShieldBreak();
+                    shakeTime = 10;
                     damageTexts.push({ x: birdX, y: birdY, val: "BLOCK!", life: 1.0, size: 22, color: "#3498db" });
                 } else {
                     damageTexts.push({ x: birdX, y: birdY, val: "-50", life: 0.8 , size: 20 });
@@ -359,6 +375,8 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
             if (Math.hypot(birdX - a.x, birdY - a.y) < 20) {
                 if (hasShield) {
                     hasShield = false; // Shield absorbs the hit
+                    spawnShieldBreak();
+                    shakeTime = 5;
                     damageTexts.push({ x: birdX, y: birdY, val: "BLOCK!", life: 1.0, size: 22, color: "#3498db" });
                 } else {
                     damageTexts.push({ x: birdX, y: birdY, val: "-20", life: 0.8, size: 20 });
