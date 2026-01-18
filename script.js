@@ -41,6 +41,30 @@ let arrows = [];
 let potions = [];
 let shields = [];
 let hasShield = false;
+let transitionParticles = [];
+let isTransitioning = false;
+
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.targetX = 50;  // Where the Dino starts
+        this.targetY = 425; // The ground
+        this.size = Math.random() * 5 + 2;
+        this.speed = Math.random() * 0.05 + 0.02; // How fast they "fly"
+        this.color = "yellow"; // Match your bird's color
+    }
+    update() {
+        // Move toward the ground target
+        this.x += (this.targetX - this.x) * this.speed;
+        this.y += (this.targetY - this.y) * this.speed;
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+    }
+}
+
 
 
 // Storage
