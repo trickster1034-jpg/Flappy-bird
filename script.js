@@ -195,6 +195,28 @@ function loop() {
         ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
     }
 
+    if (isTransitioning) {
+    transitionParticles.forEach(p => {
+        p.update();
+        p.draw();
+    });
+
+    // Check if the first particle reached the ground
+    let leadP = transitionParticles[0];
+    let distance = Math.abs(leadP.y - 425);
+
+    if (distance < 5) {
+        // TRANSITION FINISHED
+        isTransitioning = false;
+        transitionParticles = [];
+        gamePhase = 2;
+        birdY = 425; // Dino lands
+        birdV = 0;
+        pipes = []; // Clear pipes for Phase 2
+    }
+    return; // Pause the rest of the game logic during transition
+    }
+
     if (!gameStarted) {
         ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0,0,360,500);
         ctx.fillStyle = "white"; ctx.font = "bold 25px Arial"; ctx.textAlign="center";
