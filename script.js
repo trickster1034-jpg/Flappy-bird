@@ -278,7 +278,7 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
         if (gamePhase === 2 && frame % 400 === 0) {
             // Math.random() * (MaxHeight - MinHeight) + MinHeight
     // 350 is the ground level, so 150 to 300 keeps it reachable
-    let spawnY = Math.random() * 150 + 100; 
+    let spawnY = Math.random() * 120 + 200; 
     potions.push({ x: 380, y: spawnY, speed: 2.5 });
         }
 
@@ -309,7 +309,7 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
 
                 // --- SHIELD SPAWNING ---
         if (gamePhase === 2 && frame % 600 === 0 && !hasShield) {
-            let spawnY = Math.random() * 150 + 100; // Keeps shield within reach
+            let spawnY = Math.random() * 120 + 200; // Keeps shield within reach
     shields.push({ x: 380, y: spawnY, speed: 2.2 });
         }
 
