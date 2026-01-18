@@ -45,6 +45,7 @@ let transitionParticles = [];
 let isTransitioning = false;
 let transitionZoom = 1;
 let flashAlpha = 0; // For the white screen flash
+let transitionTimer = 0; 
 
 
 class Particle {
