@@ -278,7 +278,7 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
         if (gamePhase === 2 && frame % 400 === 0) {
             // Math.random() * (MaxHeight - MinHeight) + MinHeight
     // 350 is the ground level, so 150 to 300 keeps it reachable
-    let spawnY = Math.random() * 150 + 150; 
+    let spawnY = Math.random() * 150 + 100; 
     potions.push({ x: 380, y: spawnY, speed: 2.5 });
         }
 
@@ -286,6 +286,7 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
             let p = potions[i];
             p.x -= p.speed;
             p.y += 0.3;
+            if (p.y > 330) p.y = 330;
 
             // Draw the Potion
             ctx.fillStyle = "#2ecc71"; // Green
@@ -308,15 +309,16 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
 
                 // --- SHIELD SPAWNING ---
         if (gamePhase === 2 && frame % 600 === 0 && !hasShield) {
-            let spawnY = Math.random() * 150 + 150; // Keeps shield within reach
+            let spawnY = Math.random() * 150 + 100; // Keeps shield within reach
     shields.push({ x: 380, y: spawnY, speed: 2.2 });
         }
 
         for (let i = shields.length - 1; i >= 0; i--) {
             let s = shields[i];
             s.x -= s.speed;
+            s.y += 0.3;
+            if (s.y > 330) s.y = 330;
             
-
             // Draw Shield Item
             ctx.fillStyle = "#3498db"; // Blue
             ctx.beginPath(); ctx.arc(s.x, s.y, 12, 0, Math.PI*2); ctx.fill();
