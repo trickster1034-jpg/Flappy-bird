@@ -172,60 +172,6 @@ function loop() {
         ctx.drawImage(bgImg, bgX, 0, 360, 500);
         ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
     }
-        if (isTransitioning) {
-        transitionTimer++; // Fail-safe timer starts ticking
-
-        // 1. SCROLL BACKGROUND (Keeps the game looking alive)
-        bgX -= 2;
-        if (bgX <= -360) bgX = 0;
-        ctx.drawImage(bgImg, bgX, 0, 360, 500);
-        ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
-
-        // 2. CAMERA ZOOM EFFECT
-        // We zoom in slightly as the particles fall
-        ctx.save();
-        let zoomAmount = 1 + (transitionTimer / 200); 
-        ctx.translate(180, 250); // Translate to center
-        ctx.scale(zoomAmount, zoomAmount);
-        ctx.translate(-180, -250); // Translate back
-
-        // 3. UPDATE AND DRAW PARTICLES
-        transitionParticles.forEach(p => {
-            p.update();
-            p.draw();
-        });
-        ctx.restore(); // Restore zoom so UI stays normal
-
-        // 4. LANDING LOGIC & FAIL-SAFE
-        let finished = false;
-        
-        // Check if particles have reached the bottom
-        if (transitionParticles.length > 0) {
-            let p = transitionParticles[0];
-            if (p.y > 410) finished = true; 
-        }
-
-        // EMERGENCY UNFREEZE: If particles glitch, force-start after 1.5 seconds
-        if (transitionTimer > 100) finished = true;
-
-        if (finished) {
-            console.log("Morph Complete: Bird -> Dino");
-            isTransitioning = false;
-            transitionTimer = 0; 
-            gamePhase = 2; // Switch to Dino logic
-            birdY = 425;   // Place Dino on ground
-            birdV = 0;
-            pipes = [];    // Clear old pipes
-            flashAlpha = 1.0; // Trigger the white screen flash
-        }
-
-        ctx.restore(); // Matches the ctx.save() at the start of loop()
-        return; // Stops the rest of the loop from killing the "invisible" bird
-    }
-
-
-
-
 
     if (!gameStarted) {
         ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0,0,360,500);
