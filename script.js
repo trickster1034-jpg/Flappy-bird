@@ -243,9 +243,16 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
             m.x -= m.speed; 
             m.y += 0.7; // Diagonally towards dinosaur
             if (Math.hypot(birdX - m.x, birdY - m.y) < 22) {
-                damageTexts.push({ x: birdX, y: birdY, val: "-50", life: 0.8 , size: 20 });
-                hp -= 50; shakeTime = 15; meteors.splice(idx, 1);
-                if (hp <= 0) { hp = 0; gameOver = true; shakeTime = 45; }
+                if (hasShield) {
+                    hasShield = false; // Shield breaks, HP stays safe
+                    damageTexts.push({ x: birdX, y: birdY, val: "BLOCK!", life: 1.0, size: 22, color: "#3498db" });
+                } else {
+                    damageTexts.push({ x: birdX, y: birdY, val: "-50", life: 0.8 , size: 20 });
+                    hp -= 50;
+                    if (hp <= 0) { hp = 0; gameOver = true; shakeTime = 45; }
+                }
+                shakeTime = 15; 
+                meteors.splice(idx, 1);
             }
         });
 
