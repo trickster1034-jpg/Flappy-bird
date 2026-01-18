@@ -277,6 +277,31 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
             // Remove if off screen
             if (p.x < -20) potions.splice(i, 1);
         }
+
+                // --- SHIELD SPAWNING ---
+        if (gamePhase === 2 && frame % 600 === 0 && !hasShield) {
+            shields.push({ x: 380, y: Math.random() * 200 + 150, speed: 2.2 });
+        }
+
+        for (let i = shields.length - 1; i >= 0; i--) {
+            let s = shields[i];
+            s.x -= s.speed;
+
+            // Draw Shield Item
+            ctx.fillStyle = "#3498db"; // Blue
+            ctx.beginPath(); ctx.arc(s.x, s.y, 12, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+            
+            // Collision with Bird
+            if (Math.hypot(birdX - s.x, birdY - s.y) < 20) {
+                hasShield = true;
+                damageTexts.push({ x: birdX, y: birdY, val: "SHIELD UP!", life: 1.0, size: 20, color: "#3498db" });
+                shields.splice(i, 1);
+                continue;
+            }
+            if (s.x < -20) shields.splice(i, 1);
+        }
+        
         
 
         pipes = pipes.filter(p => p.x > -100);
