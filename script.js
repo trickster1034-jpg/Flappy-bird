@@ -206,12 +206,21 @@ function loop() {
         // Phase 1 Timer Scoring
         if (frame % 60 === 0 && gamePhase === 1) {
             score++;
-            if (score === 20) { 
-                gamePhase = 2; 
-                pipes = []; 
-                birdY = 425; 
-                birdV = 0; 
-            }
+            // TRIGGER TRANSITION INSTEAD OF INSTANT SWITCH
+    if (score === 20 && !isTransitioning) { 
+        isTransitioning = true;
+        
+        // Create the particles at the bird's current height
+        for (let i = 0; i < 30; i++) {
+            transitionParticles.push(new Particle(birdX, birdY));
+        }
+        
+        // Move the "bird" off-screen so it disappears during the animation
+        birdY = -1000; 
+        
+        // Note: We DON'T set gamePhase = 2 here yet. 
+        // We wait for the particles to finish their flight!
+    }
         }
 
         // Gravity & Physics
