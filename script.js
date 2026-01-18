@@ -488,11 +488,32 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
     }
     ctx.globalAlpha = 1.0;
 
-    // Draw Bird/Dino
-    ctx.save(); ctx.translate(birdX, birdY);
+        // --- DRAW BIRD/DINO + SHIELD ---
+    ctx.save(); 
+    ctx.translate(birdX, birdY);
+    
+    // Rotate bird in Phase 1 (Flappy Mode)
     if (gamePhase === 1) ctx.rotate(birdV * 0.1);
+    
+    // Draw the actual image
     if (birdImg.complete) ctx.drawImage(birdImg, -25, -25, 50, 50);
+
+    // DRAW SHIELD BUBBLE (Only if hasShield is true)
+    if (hasShield) {
+        ctx.beginPath();
+        // A pulsing blue bubble
+        ctx.arc(0, 0, 32 + Math.sin(Date.now()/100)*3, 0, Math.PI*2);
+        ctx.strokeStyle = "rgba(52, 152, 219, 0.8)"; // Bright blue
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // Faint blue glow inside
+        ctx.fillStyle = "rgba(52, 152, 219, 0.2)";
+        ctx.fill();
+    }
+    
     ctx.restore();
+    
 
     ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.textAlign="left";
     ctx.fillText("Score: "+score, 20, 40);
