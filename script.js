@@ -251,7 +251,7 @@ function loop() {
             // TRIGGER TRANSITION INSTEAD OF INSTANT SWITCH
     if (score === 20 && !isTransitioning) { 
         isTransitioning = true;
-        gamePhase = "TRANSITION";
+        console.log("Transition Started!");
         // Create the particles at the bird's current height
         for (let i = 0; i < 30; i++) {
             transitionParticles.push(new Particle(birdX, birdY));
