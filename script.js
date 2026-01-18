@@ -39,6 +39,8 @@ let damageTexts = [];
 let boss = { active: false, x: 380, y: 100, targetY: 100, shootTimer: 0 };
 let arrows = [];
 let potions = [];
+let shields = [];
+let hasShield = false;
 
 
 // Storage
