@@ -43,6 +43,9 @@ let shields = [];
 let hasShield = false;
 let transitionParticles = [];
 let isTransitioning = false;
+let transitionZoom = 1;
+let flashAlpha = 0; // For the white screen flash
+
 
 class Particle {
     constructor(x, y) {
