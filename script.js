@@ -267,7 +267,7 @@ function loop() {
         birdY += birdV;
 
         if (gamePhase === 1) {
-            if (!isTransitioning && (birdY > 500 || birdY < 0)) { gameOver = true; shakeTime = 15; }
+            if (birdY > 500 || birdY < 0) { gameOver = true; shakeTime = 15; }
         } else {
             if (birdY > 425) { birdY = 425; birdV = 0; }
             ctx.fillStyle = "#333"; ctx.fillRect(0, 460, 360, 40); // Ground
