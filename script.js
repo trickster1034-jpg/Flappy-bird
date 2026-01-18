@@ -348,10 +348,16 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
 
             // Collision check
             if (Math.hypot(birdX - a.x, birdY - a.y) < 20) {
-                damageTexts.push({ x: birdX, y: birdY, val: "-20", life: 0.8, size: 20 });
-                hp -= 20; shakeTime = 10;
+                if (hasShield) {
+                    hasShield = false; // Shield absorbs the hit
+                    damageTexts.push({ x: birdX, y: birdY, val: "BLOCK!", life: 1.0, size: 22, color: "#3498db" });
+                } else {
+                    damageTexts.push({ x: birdX, y: birdY, val: "-20", life: 0.8, size: 20 });
+                    hp -= 20;
+                    if (hp <= 0) { hp = 0; gameOver = true; shakeTime = 40; }
+                }
+                shakeTime = 10;
                 arrows.splice(i, 1);
-                if (hp <= 0) { hp = 0; gameOver = true; shakeTime = 40; }
                 continue;
             }
             if (a.x < -50 || a.x > 400 || a.y < -50 || a.y > 600) arrows.splice(i, 1);
