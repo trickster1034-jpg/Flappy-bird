@@ -199,15 +199,23 @@ function loop() {
      }
 
         // Gravity & Physics
-        let gravityVal = 0.26; // Default Phase 1 gravity
-        if (gamePhase === 1 && score >= 15) {
-            gravityVal = 0.42; // HARD MODE: Fall faster, tap rapidly!
-        } else if (gamePhase === 2) {
-            gravityVal = 0.45; // Dino phase gravity
-        }
+        // --- ALL PHYSICS MODES ---
+let gravityVal = 0.26; // Default Phase 1 (Score 0-14)
 
-        birdV += gravityVal;
-        birdY += birdV;
+if (isLimbo) {
+    gravityVal = 0.04; // DIMENSION: Limbo float
+    if (birdV > 1.5) birdV = 1.5; 
+} else if (gamePhase === 1) {
+    // PHASE 1: Checks for the "Super Gravity" at score 15
+    gravityVal = (score >= 15) ? 0.42 : 0.26;
+} else if (gamePhase === 2) {
+    // PHASE 2: Standard Dino Gravity
+    gravityVal = 0.45;
+}
+
+birdV += gravityVal;
+birdY += birdV;
+
 
         if (gamePhase === 1) {
             if (birdY > 500 || birdY < 0) { gameOver = true; shakeTime = 15; }
