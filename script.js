@@ -170,12 +170,27 @@ function loop() {
     }
 
     // Background Scroll
-    if (bgImg.complete && bgImg.width > 0) {
+        // Background Logic (Standard vs Limbo)
+    if (isLimbo) {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        limboRotation += 0.01;
+
+        // Ghostly Trail for Dino
+        if (frame % 3 === 0) {
+            particles.push({
+                x: birdX, y: birdY, xv: -1, yv: (Math.random()-0.5),
+                life: 0.5, color: "rgba(200,200,200,0.3)", size: 10
+            });
+        }
+    } else if (bgImg.complete && bgImg.width > 0) {
+        // Standard Background Drawing
         if (gameStarted && !gameOver && !gameWon) bgX -= (gamePhase === 1 ? 1 : 2.5);
         if (bgX <= -360) bgX = 0;
         ctx.drawImage(bgImg, bgX, 0, 360, 500);
         ctx.drawImage(bgImg, bgX + 360, 0, 360, 500);
     }
+
 
     if (!gameStarted) {
         ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0,0,360,500);
