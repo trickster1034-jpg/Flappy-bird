@@ -492,17 +492,40 @@ if (door.active) {
     
 
     // DRAWING SECTION
-    pipes.forEach(p => {
-        if (pipeImg.complete) {
-            if (p.type === 'f') {
-                ctx.save(); ctx.translate(p.x+30, p.top); ctx.scale(1,-1);
-                ctx.drawImage(pipeImg, -30, 0, 60, p.top); ctx.restore();
-                ctx.drawImage(pipeImg, p.x, p.bot, 60, 500-p.bot);
-            } else {
-                ctx.drawImage(pipeImg, p.x, p.top, 60, 460-p.top);
+        pipes.forEach(p => {
+        if (isLimbo) {
+            // --- LIMBO GHOSTLY PILLAR DRAWING ---
+            let dist = Math.abs(birdX - p.x);
+            // Opacity: Solid far away, transparent (0.2) when close
+            let opacity = dist < 150 ? Math.max(0.2, dist / 150) : 1.0;
+
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            ctx.translate(p.x + 30, p.top); // Center the rotation on the pillar
+            ctx.rotate(limboRotation);
+            
+            // Draw the block (Light grey with a ghostly stroke)
+            ctx.fillStyle = "#ccc"; 
+            ctx.fillRect(-20, -60, 40, 120); 
+            ctx.strokeStyle = "rgba(100, 100, 100, 0.3)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-20, -60, 40, 120);
+            
+            ctx.restore();
+        } else {
+            // --- YOUR ORIGINAL PIPE DRAWING ---
+            if (pipeImg.complete) {
+                if (p.type === 'f') {
+                    ctx.save(); ctx.translate(p.x+30, p.top); ctx.scale(1,-1);
+                    ctx.drawImage(pipeImg, -30, 0, 60, p.top); ctx.restore();
+                    ctx.drawImage(pipeImg, p.x, p.bot, 60, 500-p.bot);
+                } else {
+                    ctx.drawImage(pipeImg, p.x, p.top, 60, 460-p.top);
+                }
             }
         }
     });
+
 
     meteors.forEach(m => {
         ctx.fillStyle = "orange"; ctx.beginPath(); ctx.arc(m.x, m.y, 15, 0, Math.PI*2); ctx.fill();
