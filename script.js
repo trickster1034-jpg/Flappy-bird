@@ -56,6 +56,8 @@ let deaths = localStorage.getItem("totalDeaths") || 0;
 let shakeTime = 0;
 
 function doTap() {
+    if (isLimbo && gameStarted && !gameOver) return;
+    
     if (gameOver || gameWon) {
         // RESET BOSS SYSTEM BEFORE RESTART
         shields = [];
