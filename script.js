@@ -305,13 +305,14 @@ if (gamePhase === 1) {
     moveSpeed = 2.5;
     spawnRate = 100;
 }
-
-        // Obstacle Spawning
+        // Obstacles spawning 
         if (frame > 20 && frame % spawnRate === 0) {
-            if (gamePhase === 1) {
-                // Gap is between 50 and 250
+            if (isLimbo) {
+                // Spawn a pair of rotating pillars
+                pipes.push({x: 380, top: 100, isTop: true, passed: false}); 
+                pipes.push({x: 380, top: 400, isTop: false, passed: false}); 
+            } else if (gamePhase === 1) {
                 let t = Math.random() * 200 + 50; 
-                // Using 'bot' to match your existing logic
                 pipes.push({x: 380, top: t, bot: t + 180, type: 'f', passed: false});
             } else {
                 // Dino obstacles (Phase 2)
@@ -321,7 +322,7 @@ if (gamePhase === 1) {
         }
 
         // Meteor Spawning
-if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
+if (gamePhase === 2 && score >= 20 && frame % 145 === 0 && !isLimbo) {
     let dynamicSpeed = 4.2 + (score - 20) * 0.2; // Adds 0.2 speed for every point past 20
     meteors.push({ 
         x: 380, 
