@@ -350,6 +350,7 @@ if (door.active) {
     // Collision Check
     if (Math.abs(birdX - door.x) < 30 && Math.abs(birdY - 340) < 50) {
         isLimbo = !isLimbo; // Toggle dimension
+        touchY = birdY;
         door.active = false;
         door.x = -100;
         flashAlpha = 1.0; 
