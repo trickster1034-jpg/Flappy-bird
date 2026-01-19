@@ -312,23 +312,40 @@ if (door.active) {
         
 
         // Collisions: Pipes & Cactuses
-        pipes.forEach(p => {
-            p.x -= moveSpeed;
-            let birdR = 8; // Precise Hitbox
-            let pipeW = 40;
+                pipes.forEach(p => {
+            // Speed logic: Limbo is a slow drift
+            p.x -= isLimbo ? 1.2 : moveSpeed;
 
-            if (gamePhase === 1) {
-                if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY - birdR < p.top) { gameOver = true; shakeTime = 15; }
-                if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.bot) { gameOver = true; shakeTime = 15; }
+            if (isLimbo) {
+                // --- LIMBO COLLISION ---
+                // We use a circular hitbox (Math.hypot) for rotating pillars
+                if (Math.hypot(birdX - p.x, birdY - p.top) < 30) { 
+                    gameOver = true; 
+                    shakeTime = 15; 
+                }
             } else {
-                if (birdX + birdR > p.x + 10 && birdX - birdR < (p.x + pipeW) - 10 && birdY + birdR > p.top + 5) { damageTexts.push({ x: birdX, y: birdY, val: "-200", life: 1.2 , size: 28 }); hp = 0; gameOver = true; shakeTime = 40; }
-                // Phase 2 Skill-based Scoring
-                if (!p.passed && p.x + pipeW < birdX) {
-                    score++; p.passed = true;
-                    if (score >= 40) gameWon = true;
+                // --- STANDARD COLLISION ---
+                let birdR = 8;
+                let pipeW = 40;
+
+                if (gamePhase === 1) {
+                    if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY - birdR < p.top) { gameOver = true; shakeTime = 15; }
+                    if (birdX + birdR > p.x && birdX - birdR < p.x + pipeW && birdY + birdR > p.bot) { gameOver = true; shakeTime = 15; }
+                } else {
+                    // Phase 2: Dino Collision
+                    if (birdX + birdR > p.x + 10 && birdX - birdR < (p.x + pipeW) - 10 && birdY + birdR > p.top + 5) { 
+                        damageTexts.push({ x: birdX, y: birdY, val: "-200", life: 1.2 , size: 28 }); 
+                        hp = 0; gameOver = true; shakeTime = 40; 
+                    }
+                    // Phase 2 Skill-based Scoring
+                    if (!p.passed && p.x + pipeW < birdX) {
+                        score++; p.passed = true;
+                        if (score >= 40) gameWon = true;
+                    }
                 }
             }
         });
+
 
         // Collisions: Meteors
         meteors.forEach((m, idx) => {
