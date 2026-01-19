@@ -256,23 +256,29 @@ function loop() {
      }
 
         // Gravity & Physics
-        // --- ALL PHYSICS MODES ---
-let gravityVal = 0.26; // Default Phase 1 (Score 0-14)
-
+        // --- ALL PHYSICS MODES (REPLACE YOUR BLOCK WITH THIS) ---
 if (isLimbo) {
-    gravityVal = 0.04; // DIMENSION: Limbo float
-    if (birdV > 1.5) birdV = 1.5; 
-} else if (gamePhase === 1) {
-    // PHASE 1: Checks for the "Super Gravity" at score 15
-    gravityVal = (score >= 15) ? 0.42 : 0.26;
-} else if (gamePhase === 2) {
-    // PHASE 2: Standard Dino Gravity
-    gravityVal = 0.45;
+    // JETPLANE DRAG PHYSICS
+    // The bird "slides" toward your finger position (lerping for smoothness)
+    let ease = 0.15; // The speed of following (0.15 is smooth)
+    let dy = touchY - birdY;
+    
+    birdY += dy * ease;
+    birdV = 0; // This cancels gravity so he doesn't fall while you drag
+} else {
+    // NORMAL GRAVITY PHYSICS (PHASE 1 & 2)
+    let gravityVal = 0.26; 
+
+    if (gamePhase === 1) {
+        // Super Gravity at score 15
+        gravityVal = (score >= 15) ? 0.42 : 0.26;
+    } else if (gamePhase === 2) {
+        gravityVal = 0.45;
+    }
+
+    birdV += gravityVal;
+    birdY += birdV;
 }
-
-birdV += gravityVal;
-birdY += birdV;
-
 
         if (gamePhase === 1) {
             if (birdY > 500 || birdY < 0) { gameOver = true; shakeTime = 15; }
