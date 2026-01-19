@@ -258,6 +258,34 @@ if (gamePhase === 2 && score >= 20 && frame % 145 === 0) {
         speed: dynamicSpeed // We save the speed INSIDE the meteor object
     }); 
 }
+        // A. Spawn Entrance Door at Score 25
+if (score === 25 && !door.active && !isLimbo && soulMeter === 0) {
+    door.active = true;
+    door.x = 400;
+}
+
+// B. Door Logic (Movement & Collision)
+if (door.active) {
+    door.x -= 1.5;
+    
+    // Draw Door (Purple for Entry, Gold for Exit)
+    ctx.fillStyle = isLimbo ? "gold" : "#8e44ad"; 
+    ctx.fillRect(door.x, 300, 40, 80);
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(door.x, 300, 40, 80);
+
+    // Collision Check
+    if (Math.abs(birdX - door.x) < 30 && Math.abs(birdY - 340) < 50) {
+        isLimbo = !isLimbo; // Toggle dimension
+        door.active = false;
+        door.x = -100;
+        flashAlpha = 1.0; 
+        pipes = []; // Clear pillars/pipes for transition
+        if (!isLimbo) score += 5; // Bonus for escaping
+    }
+}
+        
         
 
         // Collisions: Pipes & Cactuses
