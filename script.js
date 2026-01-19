@@ -42,6 +42,12 @@ let potions = [];
 let shields = [];
 let hasShield = false;
 let flashAlpha = 0; 
+let isLimbo = false;
+let door = { x: -100, y: 350, active: false };
+let limboRotation = 0;
+let soulMeter = 0;
+const soulTarget = 5; 
+let soulOrbs = [];
 
 // Storage
 let highScore = localStorage.getItem("highScore") || 0;
