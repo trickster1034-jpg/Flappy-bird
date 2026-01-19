@@ -540,24 +540,32 @@ if (door.active) {
     
 
     // DRAWING SECTION
-        pipes.forEach(p => {
+            pipes.forEach(p => {
         if (isLimbo) {
-            // --- LIMBO GHOSTLY PILLAR DRAWING ---
+            // --- LIMBO GHOSTLY PILLAR DRAWING (TOP & BOTTOM) ---
             let dist = Math.abs(birdX - p.x);
-            // Opacity: Solid far away, transparent (0.2) when close
             let opacity = dist < 150 ? Math.max(0.2, dist / 150) : 1.0;
 
             ctx.save();
             ctx.globalAlpha = opacity;
-            ctx.translate(p.x + 30, p.top); // Center the rotation on the pillar
-            ctx.rotate(limboRotation);
+            ctx.translate(p.x + 30, p.top); 
             
-            // Draw the block (Light grey with a ghostly stroke)
+            // This makes top and bottom pillars spin in opposite directions
+            let rotationDir = p.isTop ? -limboRotation : limboRotation;
+            ctx.rotate(rotationDir);
+            
+            // Draw the ghostly pillar block
             ctx.fillStyle = "#ccc"; 
             ctx.fillRect(-20, -60, 40, 120); 
             ctx.strokeStyle = "rgba(100, 100, 100, 0.3)";
             ctx.lineWidth = 2;
             ctx.strokeRect(-20, -60, 40, 120);
+            
+            // Add a small glowing core to each pillar
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(0, 0, 4, 0, Math.PI * 2);
+            ctx.fill();
             
             ctx.restore();
         } else {
@@ -573,7 +581,6 @@ if (door.active) {
             }
         }
     });
-
 
     meteors.forEach(m => {
         ctx.fillStyle = "orange"; ctx.beginPath(); ctx.arc(m.x, m.y, 15, 0, Math.PI*2); ctx.fill();
