@@ -418,7 +418,7 @@ if (door.active) {
         });
 
                 // --- HEALTH POTION LOGIC ---
-        if (gamePhase === 2 && frame % 400 === 0) {
+        if (gamePhase === 2 && frame % 400 === 0 && !isLimbo ) {
             // Math.random() * (MaxHeight - MinHeight) + MinHeight
     // 350 is the ground level, so 150 to 300 keeps it reachable
     let spawnY = Math.random() * 30 + 350; 
