@@ -48,6 +48,7 @@ let limboRotation = 0;
 let soulMeter = 0;
 const soulTarget = 5; 
 let soulOrbs = [];
+let touchY = 250; // Tracks the Y position of your finger
 
 // Storage
 let highScore = localStorage.getItem("highScore") || 0;
