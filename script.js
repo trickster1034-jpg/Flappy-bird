@@ -131,8 +131,47 @@ function doTap() {
     }
 }
 
-window.addEventListener("touchstart", (e) => { e.preventDefault(); doTap(); }, {passive: false});
-window.addEventListener("mousedown", doTap);
+// Mouse Listeners
+window.addEventListener("mousedown", (e) => { 
+    isPressing = true; 
+    doTap(); 
+});
+
+window.addEventListener("mousemove", (e) => {
+    if (!isLimbo) return;
+    let rect = canvas.getBoundingClientRect();
+    // Tracks mouse Y relative to canvas
+    touchY = (e.clientY - rect.top) * (canvas.height / rect.height);
+});
+
+window.addEventListener("mouseup", () => { 
+    isPressing = false; 
+});
+
+// Touch Listeners (Mobile)
+window.addEventListener("touchstart", (e) => { 
+    e.preventDefault(); 
+    isPressing = true; 
+    
+    // Set initial touch position
+    let rect = canvas.getBoundingClientRect();
+    touchY = (e.touches[0].clientY - rect.top) * (canvas.height / rect.height);
+    
+    doTap(); 
+}, {passive: false});
+
+window.addEventListener("touchmove", (e) => { 
+    if (!isLimbo) return;
+    e.preventDefault();
+    
+    let rect = canvas.getBoundingClientRect();
+    // Continuous Y tracking for dragging
+    touchY = (e.touches[0].clientY - rect.top) * (canvas.height / rect.height);
+}, {passive: false});
+
+window.addEventListener("touchend", () => { 
+    isPressing = false; 
+});
 
 function spawnShieldBreak() {
     for(let i=0; i<15; i++) {
