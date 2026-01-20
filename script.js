@@ -305,6 +305,15 @@ if (gamePhase === 1) {
     moveSpeed = 2.5;
     spawnRate = 100;
 }
+        // --- NEW: INDEPENDENT SOUL ORB SPAWNING ---
+        if (isLimbo && frame % 120 === 0 && !gameOver) { 
+            if (soulMeter < soulTarget) {
+                soulOrbs.push({ 
+                    x: 400, 
+                    y: Math.random() * 200 + 150 
+                });
+            }
+        }
         // Obstacles spawning 
         if (frame > 20 && frame % spawnRate === 0) {
             if (isLimbo) {
