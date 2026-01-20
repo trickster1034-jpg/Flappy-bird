@@ -691,10 +691,10 @@ if (door.active) {
     }
     ctx.globalAlpha = 1.0;
 
-    // --- DRAW SOUL ORBS ---
+   // --- DRAW SOUL ORBS ---
 if (isLimbo) {
     soulOrbs.forEach((orb, index) => {
-        // Magnetism: Move toward bird if close
+        // Physics
         let dx = birdX - orb.x;
         let dy = birdY - orb.y;
         let d = Math.hypot(dx, dy);
@@ -703,29 +703,34 @@ if (isLimbo) {
             orb.x += dx * 0.08;
             orb.y += dy * 0.08;
         } else {
-            orb.x -= 1.5; // Normal drift speed
+            orb.x -= 2; 
         }
 
-        // Draw the Orb
-        ctx.fillStyle = "cyan";
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "cyan";
-        ctx.beginPath();
-        ctx.arc(orb.x, orb.y, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0; // Reset shadow for next drawings
-
-        // Collection Check
-        if (d < 25) {
+        // Collection
+        if (d < 30) {
             soulMeter++;
             soulOrbs.splice(index, 1);
             if (soulMeter >= soulTarget) {
                 door.active = true;
-                door.x = 420; // Exit door appears
+                door.x = 420;
             }
         }
+
+        // Drawing (Simplified for testing)
+        ctx.save();
+        ctx.fillStyle = "cyan";
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        // Add a white center so it's visible against the white background
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
     });
 }
+
     
 
            // --- DRAW BIRD/DINO + PULSING SHIELD ---
