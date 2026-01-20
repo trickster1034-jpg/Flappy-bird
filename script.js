@@ -311,13 +311,8 @@ if (gamePhase === 1) {
                 // Spawn a pair of rotating pillars
                 pipes.push({x: 380, top: 100, isTop: true, passed: false}); 
                 pipes.push({x: 380, top: 400, isTop: false, passed: false});
-                // 2. PASTE THE SOUL ORB CODE HERE
-        if (soulMeter < soulTarget) {
-            soulOrbs.push({ 
-                x: 400, 
-                y: Math.random() * 200 + 150 
-            });
-        }
+               }
+            
             } else if (gamePhase === 1) {
                 let t = Math.random() * 200 + 50; 
                 pipes.push({x: 380, top: t, bot: t + 180, type: 'f', passed: false});
