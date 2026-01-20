@@ -60,6 +60,9 @@ function doTap() {
     
     if (gameOver || gameWon) {
         // RESET BOSS SYSTEM BEFORE RESTART
+        isLimbo = false;     
+        soulMeter = 0;       
+        soulOrbs = [];
         shields = [];
         hasShield = false;
         arrows = [];         // Clears any arrows on screen
