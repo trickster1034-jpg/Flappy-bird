@@ -488,6 +488,7 @@ if (door.active) {
 
         pipes = pipes.filter(p => p.x > -100);
         meteors = meteors.filter(m => m.y < 520);
+        soulOrbs = soulOrbs.filter(orb => orb.x > -50);
     }
 
             // --- BOSS & ARROW LOGIC ---
